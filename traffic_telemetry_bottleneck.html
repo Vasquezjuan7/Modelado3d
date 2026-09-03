@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {"darkMode":"class","theme":{"extend":{"colors":{"on-secondary-fixed-variant":"#005236","on-primary":"#003640","on-primary-fixed-variant":"#004e5c","on-tertiary-container":"#563400","surface-variant":"#31353e","secondary-container":"#00a572","secondary":"#4edea3","surface-container-highest":"#31353e","on-tertiary-fixed-variant":"#653e00","secondary-fixed":"#6ffbbe","primary":"#4cd7f6","error-container":"#93000a","on-surface":"#dfe2ee","surface":"#0f131c","on-error":"#690005","surface-dim":"#0f131c","on-surface-variant":"#bcc9cd","on-primary-container":"#00424f","tertiary-fixed":"#ffddb8","surface-bright":"#353942","on-secondary-fixed":"#002113","background":"#0f131c","on-background":"#dfe2ee","outline":"#869397","surface-tint":"#4cd7f6","on-tertiary-fixed":"#2a1700","tertiary-container":"#e79400","primary-container":"#06b6d4","primary-fixed-dim":"#4cd7f6","surface-container-high":"#262a33","tertiary-fixed-dim":"#ffb95f","on-primary-fixed":"#001f26","inverse-on-surface":"#2c3039","on-error-container":"#ffdad6","surface-container":"#1c2028","secondary-fixed-dim":"#4edea3","inverse-primary":"#00687a","outline-variant":"#3d494c","error":"#ffb4ab","on-secondary":"#003824","tertiary":"#ffb95f","on-secondary-container":"#00311f","surface-container-lowest":"#0a0e16","surface-container-low":"#181c24","on-tertiary":"#472a00","primary-fixed":"#acedff","inverse-surface":"#dfe2ee"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"space-md":"0.75rem","margin":"1rem","space-lg":"1rem","space-sm":"0.5rem","gutter":"0.75rem","space-xs":"0.25rem","space-xl":"1.5rem"},"fontFamily":{"label-sm":["JetBrains Mono"],"headline-xl":["Space Grotesk"],"body-md":["Inter"],"body-sm":["Inter"],"headline-lg":["Space Grotesk"],"body-lg":["Inter"],"label-md":["JetBrains Mono"],"code-snippet":["JetBrains Mono"],"headline-md":["Space Grotesk"],"headline-xl-mobile":["Space Grotesk"],"label-lg":["JetBrains Mono"]},"fontSize":{"label-sm":["10px",{"lineHeight":"12px","letterSpacing":"0.08em","fontWeight":"400"}],"headline-xl":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-lg":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-md":["11px",{"lineHeight":"14px","letterSpacing":"0.06em","fontWeight":"500"}],"code-snippet":["12px",{"lineHeight":"18px","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"0em","fontWeight":"600"}],"headline-xl-mobile":["30px",{"lineHeight":"38px","letterSpacing":"-0.02em","fontWeight":"700"}],"label-lg":["13px",{"lineHeight":"18px","letterSpacing":"0.04em","fontWeight":"500"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="h-20 w-full px-space-lg flex flex-col justify-between py-space-xs"><div class="flex items-center justify-between w-full h-9"><div class="flex items-center gap-space-md"><div class="flex items-center gap-1.5 pr-space-sm"><span class="w-3 h-3 rounded-full bg-[#ff5f56] inline-block shadow-[0_0_6px_rgba(255,95,86,0.6)]"></span><span class="w-3 h-3 rounded-full bg-[#ffbd2e] inline-block shadow-[0_0_6px_rgba(255,189,46,0.6)]"></span><span class="w-3 h-3 rounded-full bg-[#27c93f] inline-block shadow-[0_0_6px_rgba(39,201,63,0.6)]"></span></div><div class="flex items-center gap-space-sm pl-space-xs"><span class="font-headline-md text-headline-md tracking-tight font-bold text-primary">CodeCity</span><span class="font-label-sm text-label-sm uppercase text-on-surface-variant/70 tracking-widest">// Spatial Runtime v3.4</span></div><div class="hidden xl:flex items-center gap-space-xs bg-surface-container px-space-md py-1 rounded border border-outline-variant/30 text-on-surface"><span class="material-symbols-outlined text-[14px] text-primary">account_tree</span><span class="font-code-snippet text-code-snippet text-on-surface font-medium">github.com/enterprise/fintech-monolith-api</span><span class="font-label-sm text-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-secondary font-mono">main/live</span></div></div><nav class="hidden md:flex items-center gap-1 bg-surface-container-low p-1 rounded-lg" data-active-classes="bg-primary text-on-primary font-bold shadow-[0_0_12px_rgba(6,182,212,0.4)]"><a class="px-space-md py-1 rounded font-label-md text-label-md uppercase tracking-wider text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="city-ast-view" href="#">3D City AST</a><a aria-current="page" class="px-space-md py-1 rounded uppercase tracking-wider transition-colors bg-primary text-on-primary font-bold shadow-[0_0_12px_rgba(6,182,212,0.4)]" data-path="traffic-telemetry" href="#">Traffic Telemetry</a><a class="px-space-md py-1 rounded font-label-md text-label-md uppercase tracking-wider text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="ai-refactor-studio" href="#">AI Refactor Studio</a><a class="px-space-md py-1 rounded font-label-md text-label-md uppercase tracking-wider text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="chaos-engineering-mode" href="#">Chaos Engineering</a></nav><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-high px-2 py-1 rounded border border-outline-variant/40"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-label-sm text-label-sm text-on-surface">PORT:8080</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-1 ring-primary/40" src="https://lh3.googleusercontent.com/aida/AEtjO1UU32QFmILjsNagZF6I5nFWUHYpAFQGyABgwFUWl8Ev4IV6LerbjYobv59C9bX8i_QYX3Haa9UCrHuWzZSego1L5CcW6mfankDR8bMfC2-7fqDpz9W4il1vs83lgFdThmIaFGbP0VBwdmHi9J6sIpG9zK-jLOENVTKP0-ixWoTk9VnylQP2LGpGVseEdWQiVN5vjkGZR1Wf7jyxncr35vCc395fIPjbcCCDvQdF-u-GwaPOrsFTbkFYLY4"/></div></div><div class="flex items-center justify-between w-full h-7 overflow-x-auto gap-space-md pt-0.5 border-t border-outline-variant/20"><div class="flex items-center gap-space-md text-on-surface-variant"><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-primary">domain</span><span class="text-on-surface">AST Nodes:</span><span class="font-mono text-primary font-semibold">1,428 classes</span></div><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-secondary">lan</span><span class="text-on-surface">Interceptor:</span><span class="font-mono text-secondary">Connected :8080</span></div><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-tertiary">speed</span><span class="text-on-surface">Packets:</span><span class="font-mono text-tertiary">4,820 req/s</span></div><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-secondary-fixed">smart_toy</span><span class="text-on-surface">AI Architect:</span><span class="font-mono text-secondary-fixed">Active 24/7</span></div></div><div class="flex items-center gap-space-md font-label-sm text-label-sm text-on-surface-variant font-mono"><span class="text-on-surface-variant">LATENCY <strong class="text-secondary font-normal">12ms</strong></span><span class="text-on-surface-variant">MEM <strong class="text-on-surface font-normal">842MB</strong></span><span class="text-on-surface-variant">GPU <strong class="text-primary font-normal">61%</strong></span></div></div></div></header><aside class="fixed left-0 top-20 bottom-0 w-72 bg-surface-container-lowest/95 backdrop-blur-xl z-40 flex flex-col justify-between border-r border-outline-variant/30"><div class="flex flex-col flex-1 p-space-sm overflow-y-auto"><div class="px-space-sm py-space-xs mb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-widest text-outline font-semibold">TACTICAL COCKPIT</span></div><nav class="space-y-1" data-active-classes="bg-surface-container-high text-primary border-l-2 border-primary font-semibold"><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="districts-and-zoning" href="#"><span class="material-symbols-outlined text-[18px]">grid_view</span><span>Districts &amp; Zoning</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="ast-metrics-filter" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span>AST Metrics Filter</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="traffic-flow-interceptors" href="#"><span class="material-symbols-outlined text-[18px]">alt_route</span><span>Traffic Flow Interceptors</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="predictive-architect-holograms" href="#"><span class="material-symbols-outlined text-[18px]">view_in_ar</span><span>Predictive Architect Holograms</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="terminal-and-daemon-logs" href="#"><span class="material-symbols-outlined text-[18px]">terminal</span><span>Terminal &amp; Daemon Logs</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="settings-and-electron-engine" href="#"><span class="material-symbols-outlined text-[18px]">settings_input_component</span><span>Settings &amp; Electron Engine</span></a></nav></div><div class="p-space-sm bg-surface-container-low border-t border-outline-variant/20"><div class="flex items-center justify-between px-space-sm py-1 font-label-sm text-label-sm text-on-surface-variant"><span class="flex items-center gap-1 font-mono text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>CORE DAEMON OK</span><span class="font-mono text-[10px] text-outline">PID: 94102</span></div></div></aside><div class="pl-72"><main class="relative pt-20 w-full min-h-screen bg-surface px-space-lg py-space-lg"><div class="flex flex-col w-full gap-space-lg text-on-surface">
+<!-- TOP HUD TELEMETRY METRIC GRID -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- Metric 1: Vehicle Packets -->
+<div class="relative bg-surface-container p-space-md rounded-xl overflow-hidden shadow-xl flex flex-col justify-between">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-primary">local_shipping</span>
+          Vehicle Packets Active
+        </span>
+<span class="font-label-sm text-label-sm bg-surface-container-high text-primary px-1.5 py-0.5 rounded shadow-sm">
+          RT_SYS // 60 FPS
+        </span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<div class="flex flex-col">
+<span class="font-headline-xl text-headline-xl font-bold tracking-tight text-primary drop-shadow-[0_0_12px_rgba(76,215,246,0.4)]">
+            4,820
+          </span>
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[12px]">trending_up</span> +312 pkts/sec
+          </span>
+</div>
+<!-- Micro sparkline SVG -->
+<svg class="w-20 h-10 text-primary" fill="none" viewbox="0 0 100 40">
+<path d="M0 32 L15 28 L30 35 L45 18 L60 22 L75 8 L90 12 L100 4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<path d="M0 32 L15 28 L30 35 L45 18 L60 22 L75 8 L90 12 L100 4 L100 40 L0 40 Z" fill="currentColor" fill-opacity="0.12"></path>
+</svg>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant/80">
+<span>Saturation: 78.4%</span>
+<span>Mesh Cap: 6.2k pkts</span>
+</div>
+</div>
+<!-- Metric 2: Congested Intersections -->
+<div class="relative bg-surface-container p-space-md rounded-xl overflow-hidden shadow-xl flex flex-col justify-between">
+<div class="absolute top-0 right-0 w-24 h-24 bg-error/10 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-error animate-pulse">crisis_alert</span>
+          Congested Intersections
+        </span>
+<span class="font-label-sm text-label-sm bg-error-container text-error px-1.5 py-0.5 rounded font-mono font-semibold">
+          CRITICAL TIER 1
+        </span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-xl text-headline-xl font-bold tracking-tight text-error drop-shadow-[0_0_12px_rgba(255,180,171,0.35)]">
+              3
+            </span>
+<span class="font-label-sm text-label-sm text-error/90 font-mono">SECTORS</span>
+</div>
+<span class="font-label-sm text-label-sm text-error flex items-center gap-1 mt-0.5 truncate max-w-[200px]">
+            Billing, UserMgr, CartCheckout
+          </span>
+</div>
+<div class="flex flex-col gap-1 items-end">
+<span class="w-2.5 h-2.5 rounded-full bg-error animate-ping"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Queue: 890 reqs</span>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant/80">
+<span>Backpressure: HIGH</span>
+<span class="text-error">Packet Drop: 1.4%</span>
+</div>
+</div>
+<!-- Metric 3: N+1 Bottlenecks -->
+<div class="relative bg-surface-container p-space-md rounded-xl overflow-hidden shadow-xl flex flex-col justify-between">
+<div class="absolute top-0 right-0 w-24 h-24 bg-tertiary/10 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-tertiary">warning</span>
+          N+1 Query Bottlenecks
+        </span>
+<span class="font-label-sm text-label-sm bg-surface-container-high text-tertiary px-1.5 py-0.5 rounded">
+          ORM SNIFFER
+        </span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<div class="flex flex-col">
+<span class="font-headline-xl text-headline-xl font-bold tracking-tight text-tertiary drop-shadow-[0_0_12px_rgba(255,185,95,0.3)]">
+            14
+          </span>
+<span class="font-label-sm text-label-sm text-tertiary flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[12px]">speed</span> +2 detected in UserView
+          </span>
+</div>
+<svg class="w-16 h-10 text-tertiary" fill="none" viewbox="0 0 80 40">
+<rect fill="currentColor" fill-opacity="0.3" height="16" rx="1" width="8" x="5" y="24"></rect>
+<rect fill="currentColor" fill-opacity="0.4" height="24" rx="1" width="8" x="18" y="16"></rect>
+<rect fill="currentColor" fill-opacity="0.3" height="12" rx="1" width="8" x="31" y="28"></rect>
+<rect fill="currentColor" fill-opacity="0.8" height="32" rx="1" width="8" x="44" y="8"></rect>
+<rect fill="currentColor" fill-opacity="0.6" height="28" rx="1" width="8" x="57" y="12"></rect>
+<rect fill="currentColor" height="36" rx="1" width="8" x="70" y="4"></rect>
+</svg>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant/80">
+<span>Queries/Req: avg 148</span>
+<span class="text-tertiary">Overhead: +310ms</span>
+</div>
+</div>
+<!-- Metric 4: Average Street Latency -->
+<div class="relative bg-surface-container p-space-md rounded-xl overflow-hidden shadow-xl flex flex-col justify-between">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-container/10 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-primary">timer</span>
+          Average Street Latency
+        </span>
+<span class="font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded">
+          SLA &lt; 50ms
+        </span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<div class="flex flex-col">
+<div class="flex items-baseline gap-1">
+<span class="font-headline-xl text-headline-xl font-bold tracking-tight text-on-surface">
+              412
+            </span>
+<span class="font-label-md text-label-md text-error font-mono">ms</span>
+</div>
+<span class="font-label-sm text-label-sm text-error flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[12px]">arrow_upward</span> 724% of SLO limit
+          </span>
+</div>
+<div class="w-16 h-16 relative flex items-center justify-center">
+<svg class="w-14 h-14 -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-container-highest" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path class="text-error" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="82, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<span class="absolute font-label-sm text-[9px] font-mono text-error font-bold">8.2x</span>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant/80">
+<span>p99: 1,840ms</span>
+<span class="text-secondary">p50: 38ms</span>
+</div>
+</div>
+</section>
+<!-- MAIN OPERATIONAL SPLIT: CITY TRAFFIC MAP & AST MATRIX -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg">
+<!-- LEFT COLUMN: LIVE TRAFFIC MAP & STREET INSPECTOR (7 COLS) -->
+<div class="xl:col-span-7 flex flex-col gap-space-md">
+<!-- Interactive Isometric Simulation Canvas -->
+<div class="bg-surface-container rounded-xl p-space-md shadow-xl flex flex-col gap-space-sm">
+<div class="flex items-center justify-between flex-wrap gap-2">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">map</span>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">Microservice Spatial Avenues</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Tactical vehicle telemetry // Iso-Grid Ortho 34°</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5 bg-surface-container-low px-space-xs py-1 rounded">
+<button class="px-2 py-0.5 rounded font-label-sm text-label-sm bg-primary text-on-primary font-bold shadow-sm">AVENUES</button>
+<button class="px-2 py-0.5 rounded font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">BRIDGES</button>
+<button class="px-2 py-0.5 rounded font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">AST WIRES</button>
+</div>
+</div>
+<!-- Simulated Isometric Canvas Projection -->
+<div class="relative w-full h-80 bg-surface-container-lowest rounded-lg overflow-hidden p-space-sm flex items-center justify-center">
+<!-- Subtle Grid Pattern Background -->
+<div class="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#4cd7f6_1px,transparent_1px)] [background-size:20px_20px]"></div>
+<!-- Dynamic SVG Vector City Grid -->
+<svg class="w-full h-full" fill="none" viewbox="0 0 680 300">
+<!-- Grid Intersections / Ground Polygons -->
+<polygon fill="#181c24" opacity="0.6" points="120,60 260,20 380,50 240,95"></polygon>
+<polygon fill="#181c24" opacity="0.6" points="260,110 400,70 520,105 380,150"></polygon>
+<polygon fill="#181c24" opacity="0.6" points="80,180 220,135 340,170 200,220"></polygon>
+<polygon fill="#181c24" opacity="0.6" points="360,180 500,135 620,175 480,225"></polygon>
+<!-- High Velocity Arteries (Green/Cyan) -->
+<!-- Avenue 1: AuthGateway -> CoreProxy -->
+<path d="M120 70 L260 120 L380 85" stroke="#4edea3" stroke-dasharray="6 4" stroke-linecap="round" stroke-width="4"></path>
+<circle cx="170" cy="88" fill="#4edea3" r="4">
+<animate attributename="cx" dur="2s" repeatcount="indefinite" values="120;260"></animate>
+<animate attributename="cy" dur="2s" repeatcount="indefinite" values="70;120"></animate>
+</circle>
+<!-- Avenue 2: RedisCache -> CartMicro -->
+<path d="M380 90 L500 135 L610 95" stroke="#4cd7f6" stroke-linecap="round" stroke-width="3"></path>
+<circle cx="440" cy="112" fill="#4cd7f6" r="3.5">
+<animate attributename="cx" dur="1.4s" repeatcount="indefinite" values="380;500"></animate>
+<animate attributename="cy" dur="1.4s" repeatcount="indefinite" values="90;135"></animate>
+</circle>
+<!-- CRITICAL GRIDLOCK ARTERY: GET /api/v1/users/me/dashboard (RED BLOCKED) -->
+<g id="congested-avenue">
+<path d="M100 190 L240 145 L380 190 L480 150" opacity="0.25" stroke="#ffb4ab" stroke-linecap="round" stroke-width="8"></path>
+<path d="M100 190 L240 145 L380 190 L480 150" stroke="#ffb4ab" stroke-linecap="round" stroke-width="3"></path>
+<!-- Blocked Packet Vehicles Queue -->
+<rect class="animate-pulse" fill="#ffb4ab" height="6" rx="1.5" width="10" x="220" y="146"></rect>
+<rect class="animate-pulse" fill="#ffb4ab" height="6" rx="1.5" width="10" x="235" y="151"></rect>
+<rect fill="#ffb4ab" height="6" rx="1.5" width="10" x="250" y="156"></rect>
+<rect fill="#ffb4ab" height="6" rx="1.5" width="10" x="265" y="161"></rect>
+<rect fill="#ffb4ab" height="6" rx="1.5" width="10" x="280" y="166"></rect>
+<rect fill="#ffb4ab" height="6" rx="1.5" width="10" x="295" y="171"></rect>
+<rect fill="#ffb4ab" height="6" rx="1.5" width="10" x="310" y="176"></rect>
+<!-- Alert Marker Pin -->
+<g transform="translate(260, 118)">
+<circle class="animate-ping" cx="12" cy="12" fill="#93000a" opacity="0.4" r="14"></circle>
+<circle cx="12" cy="12" fill="#93000a" r="9"></circle>
+<text fill="#ffdad6" font-family="JetBrains Mono" font-size="10" font-weight="bold" text-anchor="middle" x="12" y="15">!</text>
+</g>
+</g>
+<!-- 3D Skyscraper AST Monoliths -->
+<!-- Monolith 1: Financial Django Monolith (Tall red tower) -->
+<g transform="translate(345, 115)">
+<polygon fill="#93000a" opacity="0.8" points="30,0 60,15 60,85 30,70"></polygon>
+<polygon fill="#690005" opacity="0.9" points="0,15 30,0 30,70 0,55"></polygon>
+<polygon fill="#ffb4ab" opacity="0.6" points="0,15 30,0 60,15 30,30"></polygon>
+<text fill="#ffb4ab" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="30" y="-8">DJANGO MONOLITH (280m)</text>
+</g>
+<!-- Monolith 2: React Commercial Hub (Green healthy) -->
+<g transform="translate(130, 40)">
+<polygon fill="#00a572" opacity="0.7" points="20,0 40,10 40,40 20,30"></polygon>
+<polygon fill="#005236" opacity="0.85" points="0,10 20,0 20,30 0,20"></polygon>
+<polygon fill="#6ffbbe" opacity="0.6" points="0,10 20,0 40,10 20,20"></polygon>
+<text fill="#4edea3" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="20" y="-5">REACT SSR</text>
+</g>
+<!-- Monolith 3: PostgreSQL Industrial Pool (Amber) -->
+<g transform="translate(480, 130)">
+<polygon fill="#e79400" opacity="0.75" points="24,0 48,12 48,55 24,43"></polygon>
+<polygon fill="#653e00" opacity="0.9" points="0,12 24,0 24,43 0,31"></polygon>
+<polygon fill="#ffb95f" opacity="0.6" points="0,12 24,0 48,12 24,24"></polygon>
+<text fill="#ffb95f" font-family="JetBrains Mono" font-size="9" text-anchor="middle" x="24" y="-6">PG POOL :5432</text>
+</g>
+</svg>
+<!-- Interactive Floating Reticle Tag -->
+<div class="absolute bottom-3 left-3 bg-surface-container-high/90 backdrop-blur-md px-space-sm py-1 rounded shadow-lg flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+<span class="font-code-snippet text-[11px] text-error font-medium">HOTSPOT: GET /api/v1/users/me/dashboard</span>
+<span class="font-label-sm text-label-sm bg-error-container text-error px-1 rounded">280 BLOCKED PKTS</span>
+</div>
+<!-- Camera Navigation Controls -->
+<div class="absolute top-3 right-3 flex flex-col gap-1 bg-surface-container-high/90 backdrop-blur-md p-1 rounded shadow-lg">
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[16px]">rotate_90_degrees_ccw</span>
+</button>
+</div>
+</div>
+<!-- Latency Breakdown Telemetry Card -->
+<div class="bg-surface-container-low p-space-md rounded-lg shadow-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-[18px]">traffic</span>
+<span class="font-label-lg text-label-lg font-semibold text-on-surface">Street Inspection Breakdown</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">AVG ACCUMULATED: 840ms</span>
+</div>
+<!-- Multi-tier Bar visualization -->
+<div class="w-full flex flex-col gap-1.5 mt-1">
+<div class="w-full h-3.5 bg-surface-container-highest rounded overflow-hidden flex shadow-inner">
+<div class="h-full bg-tertiary transition-all" style="width: 86%;" title="ORM Queries: 86%"></div>
+<div class="h-full bg-primary transition-all" style="width: 9%;" title="Network Latency: 9%"></div>
+<div class="h-full bg-secondary transition-all" style="width: 5%;" title="CPU Serialization: 5%"></div>
+</div>
+<div class="grid grid-cols-3 gap-space-xs font-label-sm text-label-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded bg-tertiary"></span>
+<span class="text-on-surface-variant">ORM Queries: <strong class="text-tertiary">86% (722ms)</strong></span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded bg-primary"></span>
+<span class="text-on-surface-variant">Network: <strong class="text-primary">9% (76ms)</strong></span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded bg-secondary"></span>
+<span class="text-on-surface-variant">CPU Serial: <strong class="text-secondary">5% (42ms)</strong></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Packet Tracer Telemetry Table -->
+<div class="bg-surface-container-low rounded-lg p-space-sm shadow-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-space-xs py-1">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary">data_array</span>
+              Live Vehicle Dissection (Bottleneck Node)
+            </span>
+<span class="font-label-sm text-label-sm text-tertiary font-mono">14 Cascading Statements</span>
+</div>
+<div class="flex flex-col gap-1 max-h-40 overflow-y-auto">
+<div class="grid grid-cols-12 items-center p-2 rounded bg-surface-container hover:bg-surface-container-high transition-colors text-code-snippet font-code-snippet">
+<span class="col-span-3 text-primary font-semibold">#PKT-9481</span>
+<span class="col-span-7 truncate text-on-surface">SELECT * FROM user_roles WHERE user_id = 492</span>
+<span class="col-span-2 text-right text-tertiary font-mono">18.4ms</span>
+</div>
+<div class="grid grid-cols-12 items-center p-2 rounded bg-surface-container hover:bg-surface-container-high transition-colors text-code-snippet font-code-snippet">
+<span class="col-span-3 text-primary font-semibold">#PKT-9482</span>
+<span class="col-span-7 truncate text-on-surface">SELECT * FROM permissions WHERE role_id = 12</span>
+<span class="col-span-2 text-right text-tertiary font-mono">14.1ms</span>
+</div>
+<div class="grid grid-cols-12 items-center p-2 rounded bg-surface-container hover:bg-surface-container-high transition-colors text-code-snippet font-code-snippet">
+<span class="col-span-3 text-primary font-semibold">#PKT-9483</span>
+<span class="col-span-7 truncate text-on-surface">SELECT * FROM permissions WHERE role_id = 18</span>
+<span class="col-span-2 text-right text-tertiary font-mono">16.8ms</span>
+</div>
+<div class="grid grid-cols-12 items-center p-2 rounded bg-surface-container hover:bg-surface-container-high transition-colors text-code-snippet font-code-snippet">
+<span class="col-span-3 text-primary font-semibold">#PKT-9484</span>
+<span class="col-span-7 truncate text-on-surface">SELECT * FROM tenant_features WHERE tenant_id = 8</span>
+<span class="col-span-2 text-right text-error font-mono">52.9ms</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: AST URBAN ZONING & CLASS DENSITY MATRIX (5 COLS) -->
+<div class="xl:col-span-5 flex flex-col gap-space-md">
+<!-- Zoning Map Table & Health Cards -->
+<div class="bg-surface-container rounded-xl p-space-md shadow-xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[20px]">location_city</span>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">Urban Zoning &amp; Density</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Architectural city quadrants</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm bg-surface-container-high px-space-xs py-1 rounded text-secondary font-mono">
+            3 DISTRICTS MAPPED
+          </span>
+</div>
+<!-- Zone 1: Commercial Zone -->
+<div class="bg-surface-container-low p-space-md rounded-lg shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-secondary shadow-[0_0_8px_rgba(78,222,163,0.5)]"></span>
+<span class="font-headline-md text-[16px] text-on-surface font-bold">Commercial Zone</span>
+</div>
+<span class="font-label-sm text-label-sm bg-secondary/10 text-secondary px-2 py-0.5 rounded font-mono font-medium">HEALTHY // OPTIMAL</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">React Components, Next.js Hydration Islands &amp; Edge CDN nodes.</p>
+<div class="grid grid-cols-2 gap-space-sm mt-space-xs pt-space-xs bg-surface-container p-space-sm rounded">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Average Height</span>
+<span class="font-headline-md text-headline-md font-semibold text-secondary">45m</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Low coupling</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Flow Velocity</span>
+<span class="font-headline-md text-headline-md font-semibold text-secondary">98 <span class="text-body-sm font-normal text-on-surface-variant">km/h</span></span>
+<span class="font-label-sm text-label-sm text-secondary">Fluid transit</span>
+</div>
+</div>
+</div>
+<!-- Zone 2: Financial Zone (Gridlock) -->
+<div class="bg-surface-container-low p-space-md rounded-lg shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-error shadow-[0_0_8px_rgba(255,180,171,0.6)] animate-ping"></span>
+<span class="font-headline-md text-[16px] text-on-surface font-bold">Financial Zone</span>
+</div>
+<span class="font-label-sm text-label-sm bg-error-container text-error px-2 py-0.5 rounded font-mono font-bold">EXTREME DENSITY ALERT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Legacy Django Monolith, synchronous payment workflows &amp; celery backlogs.</p>
+<div class="grid grid-cols-2 gap-space-sm mt-space-xs pt-space-xs bg-surface-container p-space-sm rounded">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Tower Height</span>
+<span class="font-headline-md text-headline-md font-semibold text-error">280m</span>
+<span class="font-label-sm text-label-sm text-error">Mega-God Class</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Flow Velocity</span>
+<span class="font-headline-md text-headline-md font-semibold text-error">12 <span class="text-body-sm font-normal text-on-surface-variant">km/h</span></span>
+<span class="font-label-sm text-label-sm text-error">Severe Gridlock</span>
+</div>
+</div>
+</div>
+<!-- Zone 3: Industrial Zone -->
+<div class="bg-surface-container-low p-space-md rounded-lg shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-tertiary shadow-[0_0_8px_rgba(255,185,95,0.4)]"></span>
+<span class="font-headline-md text-[16px] text-on-surface font-bold">Industrial Zone</span>
+</div>
+<span class="font-label-sm text-label-sm bg-tertiary/10 text-tertiary px-2 py-0.5 rounded font-mono font-medium">HIGH SATURATION</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">PostgreSQL Connection Pool, Redis replica clusters &amp; Kafka message brokers.</p>
+<div class="flex flex-col gap-1.5 mt-space-xs pt-space-xs bg-surface-container p-space-sm rounded">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Pool Capacity Utilized</span>
+<span class="font-mono text-tertiary font-bold">94% (94/100 sockets)</span>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded overflow-hidden">
+<div class="h-full bg-tertiary transition-all" style="width: 94%;"></div>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant pt-1">
+<span>Wait queue: 18 threads</span>
+<span>Max spillover: 5%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Action Operations Console -->
+<div class="bg-surface-container rounded-xl p-space-md shadow-xl flex items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px]">smart_toy</span>
+<div>
+<div class="font-headline-md text-[15px] font-semibold text-on-surface">Auto-Decouple Intersection</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">AI Architect recommends splitting Billing into 3 Lambdas</div>
+</div>
+</div>
+<button class="px-space-md py-2 rounded bg-primary text-on-primary font-label-md text-label-md font-bold uppercase tracking-wider hover:shadow-[0_0_16px_rgba(76,215,246,0.6)] transition-all shrink-0" id="dispatchRefactorBtn">
+          DISPATCH PASS
+        </button>
+</div>
+</div>
+</div>
+<!-- BOTTOM REALTIME DAEMON STREAM (PIPE TERMINAL) -->
+<section class="w-full bg-surface-container rounded-xl p-space-md shadow-xl flex flex-col gap-space-sm">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">terminal</span>
+<span class="font-label-lg text-label-lg font-semibold text-on-surface">Electron child_process Live Output Pipe</span>
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">/dev/ttyS0 :: telemetry_daemon.ts</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-colors">
+          CLEAR BUFFER
+        </button>
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-colors">
+          PAUSE PIPE
+        </button>
+</div>
+</div>
+<!-- Monospaced Log Stream Container -->
+<div class="w-full h-44 bg-surface-container-lowest rounded-lg p-space-md font-code-snippet text-code-snippet overflow-y-auto flex flex-col gap-1 select-text shadow-inner" id="daemonStreamContainer">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="text-on-surface-variant/60">14:02:18.012</span>
+<span class="text-secondary font-semibold">[IPC_CHANNEL_OK]</span>
+<span class="text-on-surface">Socket bound to unix:///var/run/codecity_spatial.sock (Worker PID 94102)</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="text-on-surface-variant/60">14:02:18.140</span>
+<span class="text-primary font-semibold">[PACKET_CAPTURE]</span>
+<span>Ingested 4,820 active HTTP frames across 12 microservice avenues</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="text-on-surface-variant/60">14:02:18.420</span>
+<span class="text-error font-semibold">[GRIDLOCK_DETECT]</span>
+<span class="text-error">Avenue 'GET /api/v1/users/me/dashboard' congested. 280 vehicle units trapped at node UserSerializer.py:142</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="text-on-surface-variant/60">14:02:18.490</span>
+<span class="text-tertiary font-semibold">[N+1_ALARM]</span>
+<span class="text-tertiary">SQL Fanout detected: SELECT * FROM permissions executed 14 times consecutively inside loop [Total = 241ms]</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="text-on-surface-variant/60">14:02:18.730</span>
+<span class="text-primary font-semibold">[DISPATCHER]</span>
+<span>Pushed synthetic telemetry probe #PKT-9489 through Redis Cache Bypass test. Measured RTT: 1.2ms</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="text-on-surface-variant/60">14:02:19.004</span>
+<span class="text-secondary font-semibold">[AI_ARCHITECT]</span>
+<span class="text-secondary">Synthesized AST patch preview for UserSerializer.select_related('roles__permissions')</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant animate-pulse">
+<span class="text-on-surface-variant/60">14:02:19.210</span>
+<span class="text-primary font-semibold">[STREAM_IDLE]</span>
+<span class="text-on-surface-variant">Listening for incoming TCP ingress traffic on :8080...</span>
+</div>
+</div>
+</section>
+</div>
+<script>
+  // Dynamic Realtime micro-interactions for the Telemetry Dashboard
+  (function() {
+    const streamContainer = document.getElementById('daemonStreamContainer');
+    const dispatchBtn = document.getElementById('dispatchRefactorBtn');
+
+    if (streamContainer) {
+      const simulatedPackets = [
+        { level: 'PACKET_IN', color: 'text-primary', text: 'Vehicle #PKT-9490 routed to PostgreSQL connection pool: 12ms latency' },
+        { level: 'WARNING', color: 'text-tertiary', text: 'PostgreSQL socket threshold reached 95% limit for 120ms' },
+        { level: 'TELEMETRY', color: 'text-secondary', text: 'Commercial Zone React SSR edge node flushed 340kB bundle' },
+        { level: 'ROUTER', color: 'text-on-surface-variant', text: 'Traffic diversion applied: 40 requests rerouted to /cache/v2/user_roles' }
+      ];
+
+      let packetIndex = 0;
+      setInterval(() => {
+        const item = simulatedPackets[packetIndex % simulatedPackets.length];
+        packetIndex++;
+        const now = new Date().toTimeString().split(' ')[0] + '.' + Math.floor(Math.random() * 900 + 100);
+        
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 text-on-surface-variant transition-opacity';
+        row.innerHTML = `
+          <span class="text-on-surface-variant/60">${now}</span>
+          <span class="${item.color} font-semibold">[${item.level}]</span>
+          <span class="text-on-surface">${item.text}</span>
+        `;
+        streamContainer.appendChild(row);
+        if (streamContainer.children.length > 25) {
+          streamContainer.removeChild(streamContainer.firstChild);
+        }
+        streamContainer.scrollTop = streamContainer.scrollHeight;
+      }, 3500);
+    }
+
+    if (dispatchBtn) {
+      dispatchBtn.addEventListener('click', () => {
+        dispatchBtn.textContent = 'DEPLOYING BYPASS...';
+        dispatchBtn.classList.remove('bg-primary', 'text-on-primary');
+        dispatchBtn.classList.add('bg-secondary', 'text-on-secondary');
+        
+        setTimeout(() => {
+          dispatchBtn.textContent = 'DISPATCH PASS';
+          dispatchBtn.classList.add('bg-primary', 'text-on-primary');
+          dispatchBtn.classList.remove('bg-secondary', 'text-on-secondary');
+          if (streamContainer) {
+            const now = new Date().toTimeString().split(' ')[0] + '.999';
+            const alertRow = document.createElement('div');
+            alertRow.className = 'flex items-center gap-2 text-secondary font-bold';
+            alertRow.innerHTML = `
+              <span class="text-on-surface-variant/60">${now}</span>
+              <span>[REFACTOR_APPLIED]</span>
+              <span>Decoupling applied to Django Monolith. Avenue pressure decreased by 64%!</span>
+            `;
+            streamContainer.appendChild(alertRow);
+            streamContainer.scrollTop = streamContainer.scrollHeight;
+          }
+        }, 1800);
+      });
+    }
+  })();
+</script></main></div></body></html>

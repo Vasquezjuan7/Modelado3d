@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+<!-- STITCH_THREEJS_START:ANIMATION_2 class="fixed inset-0 w-full h-full bg-transparent" -->
+<div class="fixed inset-0 w-full h-full bg-transparent" style="display:block;">
+<script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+<div id="threejs-container-ANIMATION_2" style="width:100%;height:100%"></div>
+<script>
+(function() {
+  const container = document.getElementById('threejs-container-ANIMATION_2');
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  // CodeCity 3D Spatial Simulation (AST City Engine + Live Traffic Streams + Holographic AI Diagnostics)
+const container = document.getElementById('threejs-canvas-container') || document.body;
+const width = container.clientWidth || window.innerWidth;
+const height = container.clientHeight || window.innerHeight;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0e17, 0.0035);
+
+const camera = new THREE.PerspectiveCamera(45, width / height, 1, 3000);
+camera.position.set(220, 260, 320);
+
+const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+renderer.setSize(width, height);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0x1e293b, 1.8);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0x38bdf8, 2.2);
+dirLight.position.set(250, 400, 200);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+const pointLightPink = new THREE.PointLight(0xec4899, 3, 400);
+pointLightPink.position.set(0, 80, -20);
+scene.add(pointLightPink);
+
+const pointLightCyan = new THREE.PointLight(0x06b6d4, 2.5, 450);
+pointLightCyan.position.set(-100, 60, 60);
+scene.add(pointLightCyan);
+
+// Grid Cyber Floor
+const gridHelper = new THREE.GridHelper(900, 60, 0x06b6d4, 0x1e293b);
+gridHelper.position.y = -0.5;
+scene.add(gridHelper);
+
+// District Groups & Floor Plates
+const districts = [
+  { name: 'Commercial (React Frontend)', color: 0x3b82f6, center: [-140, 0, -100], size: [180, 160], plateColor: 0x172554 },
+  { name: 'Industrial (PostgreSQL & Redis DB)', color: 0x10b981, center: [140, 0, -100], size: [160, 160], plateColor: 0x064e3b },
+  { name: 'Financial (Django Core & Auth API)', color: 0xf59e0b, center: [-120, 0, 120], size: [180, 170], plateColor: 0x451a03 },
+  { name: 'Government (Worker & Queue Clusters)', color: 0x8b5cf6, center: [130, 0, 120], size: [170, 170], plateColor: 0x2e1065 }
+];
+
+districts.forEach(dist => {
+  const plateGeo = new THREE.BoxGeometry(dist.size[0], 2, dist.size[1]);
+  const plateMat = new THREE.MeshLambertMaterial({ color: dist.plateColor, transparent: true, opacity: 0.65 });
+  const plate = new THREE.Mesh(plateGeo, plateMat);
+  plate.position.set(dist.center[0], -1, dist.center[2]);
+  plate.receiveShadow = true;
+  scene.add(plate);
+
+  // Outline for district
+  const edges = new THREE.EdgesGeometry(plateGeo);
+  const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: dist.color, transparent: true, opacity: 0.4 }));
+  line.position.copy(plate.position);
+  scene.add(line);
+});
+
+// AST Buildings Generator
+const buildings = [];
+const buildingMaterials = {
+  frontend: new THREE.MeshPhongMaterial({ color: 0x0284c7, specular: 0x38bdf8, shininess: 80, transparent: true, opacity: 0.9 }),
+  database: new THREE.MeshPhongMaterial({ color: 0x059669, specular: 0x34d399, shininess: 80, transparent: true, opacity: 0.9 }),
+  api: new THREE.MeshPhongMaterial({ color: 0xd97706, specular: 0xfbbf24, shininess: 70, transparent: true, opacity: 0.9 }),
+  workers: new THREE.MeshPhongMaterial({ color: 0x7c3aed, specular: 0xa78bfa, shininess: 80, transparent: true, opacity: 0.9 }),
+  godObject: new THREE.MeshPhongMaterial({ color: 0xef4444, specular: 0xf87171, emissive: 0x7f1d1d, shininess: 100 })
+};
+
+// Procedural AST Buildings Data
+const rawBuildings = [
+  // Commercial District (Frontend)
+  { name: "App.tsx", lines: 420, methods: 18, district: 0, x: -180, z: -130, mat: 'frontend' },
+  { name: "CityViewport.tsx", lines: 680, methods: 28, district: 0, x: -140, z: -80, mat: 'frontend' },
+  { name: "AuthContext.tsx", lines: 210, methods: 9, district: 0, x: -110, z: -140, mat: 'frontend' },
+  { name: "TrafficCanvas.tsx", lines: 510, methods: 22, district: 0, x: -90, z: -70, mat: 'frontend' },
+  { name: "StateStore.ts", lines: 340, methods: 15, district: 0, x: -160, z: -40, mat: 'frontend' },
+
+  // Industrial District (DB & Models)
+  { name: "0014_migration.py", lines: 180, methods: 6, district: 1, x: 100, z: -140, mat: 'database' },
+  { name: "PostgresPool.java", lines: 750, methods: 32, district: 1, x: 150, z: -90, mat: 'database' },
+  { name: "RedisCache.py", lines: 320, methods: 12, district: 1, x: 180, z: -140, mat: 'database' },
+  { name: "TelemetryDB.go", lines: 460, methods: 19, district: 1, x: 110, z: -60, mat: 'database' },
+
+  // Financial (API & Business Logic) - GOD OBJECT ALERT
+  { name: "UserManager.py [GOD OBJECT]", lines: 3450, methods: 142, district: 2, x: -90, z: 80, mat: 'godObject', isGodObject: true },
+  { name: "BillingService.py", lines: 890, methods: 38, district: 2, x: -150, z: 100, mat: 'api' },
+  { name: "AuthController.java", lines: 620, methods: 24, district: 2, x: -130, z: 150, mat: 'api' },
+  { name: "QueryRouter.py", lines: 1120, methods: 45, district: 2, x: -60, z: 130, mat: 'api' },
+
+  // Government (Workers & Queue)
+  { name: "CeleryWorker.py", lines: 580, methods: 24, district: 3, x: 100, z: 80, mat: 'workers' },
+  { name: "AuditConsumer.ts", lines: 430, methods: 16, district: 3, x: 150, z: 90, mat: 'workers' },
+  { name: "ASTParserService.py", lines: 940, methods: 35, district: 3, x: 120, z: 150, mat: 'workers' },
+  { name: "TrafficSimulator.cpp", lines: 810, methods: 29, district: 3, x: 170, z: 140, mat: 'workers' }
+];
+
+rawBuildings.forEach(b => {
+  // Height strictly mapped to LOC, width/depth mapped to methods count
+  const h = Math.max(25, b.lines * 0.055);
+  const w = Math.max(16, b.methods * 0.85);
+  const d = Math.max(16, b.methods * 0.85);
+
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mat = buildingMaterials[b.mat];
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(b.x, h / 2, b.z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.userData = { ...b, height: h, width: w };
+  scene.add(mesh);
+  buildings.push(mesh);
+
+  // Wireframe roof cap accent
+  const wireGeo = new THREE.EdgesGeometry(geo);
+  const wireMat = new THREE.LineBasicMaterial({
+    color: b.isGodObject ? 0xff0055 : (b.mat === 'frontend' ? 0x38bdf8 : b.mat === 'database' ? 0x34d399 : 0xf59e0b),
+    linewidth: 1.5
+  });
+  const wireMesh = new THREE.LineSegments(wireGeo, wireMat);
+  wireMesh.position.copy(mesh.position);
+  scene.add(wireMesh);
+
+  // God Object Pulse Aura
+  if (b.isGodObject) {
+    const haloGeo = new THREE.CylinderGeometry(w * 1.2, w * 1.5, 4, 16);
+    const haloMat = new THREE.MeshBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.35, wireframe: true });
+    const halo = new THREE.Mesh(haloGeo, haloMat);
+    halo.position.set(b.x, h + 10, b.z);
+    scene.add(halo);
+    mesh.userData.halo = halo;
+  }
+});
+
+// Avenues & Traffic Grid Simulation (HTTP / SQL Packet Vehicles)
+const highways = [
+  // Commercial to Financial (Frontend to API)
+  { start: new THREE.Vector3(-140, 0.5, -80), end: new THREE.Vector3(-90, 0.5, 80), type: 'HTTP', color: 0x06b6d4 },
+  // Financial to Industrial (API to DB - N+1 bottleneck route!)
+  { start: new THREE.Vector3(-90, 0.5, 80), end: new THREE.Vector3(140, 0.5, -90), type: 'SQL_N1_BOTTLENECK', color: 0xf59e0b, congested: true },
+  // Financial to Workers
+  { start: new THREE.Vector3(-90, 0.5, 80), end: new THREE.Vector3(120, 0.5, 120), type: 'GRPC', color: 0x8b5cf6 },
+  // Frontend to Workers (WebSockets)
+  { start: new THREE.Vector3(-140, 0.5, -80), end: new THREE.Vector3(100, 0.5, 80), type: 'WSS', color: 0x38bdf8 }
+];
+
+highways.forEach(hw => {
+  const points = [hw.start, hw.end];
+  const roadGeo = new THREE.BufferGeometry().setFromPoints(points);
+  const roadMat = new THREE.LineDashedMaterial({
+    color: hw.congested ? 0xef4444 : hw.color,
+    dashSize: 6,
+    gapSize: 4,
+    linewidth: 3
+  });
+  const roadLine = new THREE.Line(roadGeo, roadMat);
+  roadLine.computeLineDistances();
+  scene.add(roadLine);
+});
+
+// Dynamic Vehicles (Packets)
+const vehicles = [];
+const vehicleGeo = new THREE.BoxGeometry(3.5, 2, 6);
+const vehicleMatNormal = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+const vehicleMatCongested = new THREE.MeshBasicMaterial({ color: 0xff3b30 });
+
+for (let i = 0; i < 90; i++) {
+  // 60% of vehicles are on the congested N+1 SQL avenue!
+  const isCongestedPath = i < 55;
+  const path = isCongestedPath ? highways[1] : highways[i % highways.length];
+  
+  const mesh = new THREE.Mesh(vehicleGeo, isCongestedPath ? vehicleMatCongested : vehicleMatNormal);
+  mesh.castShadow = true;
+  
+  vehicles.push({
+    mesh: mesh,
+    path: path,
+    progress: (i / 90),
+    speed: isCongestedPath ? (0.0008 + (i % 5) * 0.0003) : (0.0035 + Math.random() * 0.002), // heavy slowdown on bottleneck!
+    isCongested: isCongestedPath
+  });
+  scene.add(mesh);
+}
+
+// Holographic AI Intervention Portal over the N+1 Congestion Hub
+const holoGroup = new THREE.Group();
+holoGroup.position.set(20, 48, -5); // Mid-point of congested artery
+
+// Rings
+const ringGeo1 = new THREE.RingGeometry(18, 22, 32);
+const ringMat1 = new THREE.MeshBasicMaterial({ color: 0xec4899, side: THREE.DoubleSide, transparent: true, opacity: 0.75 });
+const ringMesh1 = new THREE.Mesh(ringGeo1, ringMat1);
+ringMesh1.rotation.x = Math.PI / 2;
+holoGroup.add(ringMesh1);
+
+const ringGeo2 = new THREE.RingGeometry(25, 27, 32);
+const ringMat2 = new THREE.MeshBasicMaterial({ color: 0x06b6d4, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+const ringMesh2 = new THREE.Mesh(ringGeo2, ringMat2);
+ringMesh2.rotation.x = Math.PI / 2;
+holoGroup.add(ringMesh2);
+
+// Beacon light beam
+const beamGeo = new THREE.CylinderGeometry(0.8, 12, 90, 16, 1, true);
+const beamMat = new THREE.MeshBasicMaterial({ color: 0xec4899, transparent: true, opacity: 0.25, side: THREE.DoubleSide });
+const beamMesh = new THREE.Mesh(beamGeo, beamMat);
+beamMesh.position.y = 45;
+holoGroup.add(beamMesh);
+
+scene.add(holoGroup);
+
+// Interactive Controls & Smooth Orbit Simulation
+let mouseX = 0, mouseY = 0;
+let targetRotX = 0.5, targetRotY = 0.4;
+let angle = 0;
+
+window.addEventListener('mousemove', (e) => {
+  mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+  mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+});
+
+window.addEventListener('resize', () => {
+  const w = container.clientWidth || window.innerWidth;
+  const h = container.clientHeight || window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+});
+
+// Render Animation Loop
+let clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  const time = clock.getElapsedTime();
+
+  // Subtle orbital camera drift + mouse parallax
+  angle += 0.0018;
+  const camRadius = 400;
+  camera.position.x = Math.sin(angle) * camRadius + mouseX * 40;
+  camera.position.z = Math.cos(angle) * camRadius + mouseY * 40;
+  camera.position.y = 240 + Math.sin(time * 0.4) * 20;
+  camera.lookAt(0, 30, 0);
+
+  // Animate Vehicles on Highways
+  vehicles.forEach(v => {
+    v.progress += v.speed;
+    if (v.progress > 1) v.progress = 0;
+    
+    // Position interpolated along path
+    v.mesh.position.lerpVectors(v.path.start, v.path.end, v.progress);
+    v.mesh.position.y = 1.5 + Math.sin(v.progress * Math.PI) * 0.8;
+    
+    // Look ahead
+    const lookTarget = new THREE.Vector3().lerpVectors(v.path.start, v.path.end, Math.min(1, v.progress + 0.02));
+    v.mesh.lookAt(lookTarget.x, 1.5, lookTarget.z);
+    
+    // Pulse congested vehicle colors
+    if (v.isCongested) {
+      const redVal = 0.8 + Math.sin(time * 8 + v.progress * 10) * 0.2;
+      v.mesh.material.color.setRGB(1.0, 0.1 * redVal, 0.15 * redVal);
+    }
+  });
+
+  // God Object Halo rotation
+  buildings.forEach(b => {
+    if (b.userData.halo) {
+      b.userData.halo.rotation.y += 0.03;
+      b.userData.halo.scale.setScalar(1 + Math.sin(time * 3) * 0.08);
+    }
+  });
+
+  // Hologram Rotations
+  ringMesh1.rotation.z += 0.02;
+  ringMesh2.rotation.z -= 0.015;
+  holoGroup.position.y = 48 + Math.sin(time * 2.5) * 4;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+})();
+</script>
+</div>
+<!-- STITCH_THREEJS_END:ANIMATION_2 -->
+</body>
+</html>

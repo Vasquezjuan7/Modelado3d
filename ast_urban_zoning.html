@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {"darkMode":"class","theme":{"extend":{"colors":{"on-secondary-fixed-variant":"#005236","on-primary":"#003640","on-primary-fixed-variant":"#004e5c","on-tertiary-container":"#563400","surface-variant":"#31353e","secondary-container":"#00a572","secondary":"#4edea3","surface-container-highest":"#31353e","on-tertiary-fixed-variant":"#653e00","secondary-fixed":"#6ffbbe","primary":"#4cd7f6","error-container":"#93000a","on-surface":"#dfe2ee","surface":"#0f131c","on-error":"#690005","surface-dim":"#0f131c","on-surface-variant":"#bcc9cd","on-primary-container":"#00424f","tertiary-fixed":"#ffddb8","surface-bright":"#353942","on-secondary-fixed":"#002113","background":"#0f131c","on-background":"#dfe2ee","outline":"#869397","surface-tint":"#4cd7f6","on-tertiary-fixed":"#2a1700","tertiary-container":"#e79400","primary-container":"#06b6d4","primary-fixed-dim":"#4cd7f6","surface-container-high":"#262a33","tertiary-fixed-dim":"#ffb95f","on-primary-fixed":"#001f26","inverse-on-surface":"#2c3039","on-error-container":"#ffdad6","surface-container":"#1c2028","secondary-fixed-dim":"#4edea3","inverse-primary":"#00687a","outline-variant":"#3d494c","error":"#ffb4ab","on-secondary":"#003824","tertiary":"#ffb95f","on-secondary-container":"#00311f","surface-container-lowest":"#0a0e16","surface-container-low":"#181c24","on-tertiary":"#472a00","primary-fixed":"#acedff","inverse-surface":"#dfe2ee"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"space-md":"0.75rem","margin":"1rem","space-lg":"1rem","space-sm":"0.5rem","gutter":"0.75rem","space-xs":"0.25rem","space-xl":"1.5rem"},"fontFamily":{"label-sm":["JetBrains Mono"],"headline-xl":["Space Grotesk"],"body-md":["Inter"],"body-sm":["Inter"],"headline-lg":["Space Grotesk"],"body-lg":["Inter"],"label-md":["JetBrains Mono"],"code-snippet":["JetBrains Mono"],"headline-md":["Space Grotesk"],"headline-xl-mobile":["Space Grotesk"],"label-lg":["JetBrains Mono"]},"fontSize":{"label-sm":["10px",{"lineHeight":"12px","letterSpacing":"0.08em","fontWeight":"400"}],"headline-xl":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-lg":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-md":["11px",{"lineHeight":"14px","letterSpacing":"0.06em","fontWeight":"500"}],"code-snippet":["12px",{"lineHeight":"18px","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"0em","fontWeight":"600"}],"headline-xl-mobile":["30px",{"lineHeight":"38px","letterSpacing":"-0.02em","fontWeight":"700"}],"label-lg":["13px",{"lineHeight":"18px","letterSpacing":"0.04em","fontWeight":"500"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="h-20 w-full px-space-lg flex flex-col justify-between py-space-xs"><div class="flex items-center justify-between w-full h-9"><div class="flex items-center gap-space-md"><div class="flex items-center gap-1.5 pr-space-sm"><span class="w-3 h-3 rounded-full bg-[#ff5f56] inline-block shadow-[0_0_6px_rgba(255,95,86,0.6)]"></span><span class="w-3 h-3 rounded-full bg-[#ffbd2e] inline-block shadow-[0_0_6px_rgba(255,189,46,0.6)]"></span><span class="w-3 h-3 rounded-full bg-[#27c93f] inline-block shadow-[0_0_6px_rgba(39,201,63,0.6)]"></span></div><div class="flex items-center gap-space-sm pl-space-xs"><span class="font-headline-md text-headline-md tracking-tight font-bold text-primary">CodeCity</span><span class="font-label-sm text-label-sm uppercase text-on-surface-variant/70 tracking-widest">// Spatial Runtime v3.4</span></div><div class="hidden xl:flex items-center gap-space-xs bg-surface-container px-space-md py-1 rounded border border-outline-variant/30 text-on-surface"><span class="material-symbols-outlined text-[14px] text-primary">account_tree</span><span class="font-code-snippet text-code-snippet text-on-surface font-medium">github.com/enterprise/fintech-monolith-api</span><span class="font-label-sm text-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-secondary font-mono">main/live</span></div></div><nav class="hidden md:flex items-center gap-1 bg-surface-container-low p-1 rounded-lg" data-active-classes="bg-primary text-on-primary font-bold shadow-[0_0_12px_rgba(6,182,212,0.4)]"><a class="px-space-md py-1 rounded font-label-md text-label-md uppercase tracking-wider text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="city-ast-view" href="#">3D City AST</a><a class="px-space-md py-1 rounded font-label-md text-label-md uppercase tracking-wider text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="traffic-telemetry" href="#">Traffic Telemetry</a><a class="px-space-md py-1 rounded font-label-md text-label-md uppercase tracking-wider text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="ai-refactor-studio" href="#">AI Refactor Studio</a><a class="px-space-md py-1 rounded font-label-md text-label-md uppercase tracking-wider text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="chaos-engineering-mode" href="#">Chaos Engineering</a></nav><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-high px-2 py-1 rounded border border-outline-variant/40"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-label-sm text-label-sm text-on-surface">PORT:8080</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-1 ring-primary/40" src="https://lh3.googleusercontent.com/aida/AEtjO1UU32QFmILjsNagZF6I5nFWUHYpAFQGyABgwFUWl8Ev4IV6LerbjYobv59C9bX8i_QYX3Haa9UCrHuWzZSego1L5CcW6mfankDR8bMfC2-7fqDpz9W4il1vs83lgFdThmIaFGbP0VBwdmHi9J6sIpG9zK-jLOENVTKP0-ixWoTk9VnylQP2LGpGVseEdWQiVN5vjkGZR1Wf7jyxncr35vCc395fIPjbcCCDvQdF-u-GwaPOrsFTbkFYLY4"/></div></div><div class="flex items-center justify-between w-full h-7 overflow-x-auto gap-space-md pt-0.5 border-t border-outline-variant/20"><div class="flex items-center gap-space-md text-on-surface-variant"><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-primary">domain</span><span class="text-on-surface">AST Nodes:</span><span class="font-mono text-primary font-semibold">1,428 classes</span></div><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-secondary">lan</span><span class="text-on-surface">Interceptor:</span><span class="font-mono text-secondary">Connected :8080</span></div><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-tertiary">speed</span><span class="text-on-surface">Packets:</span><span class="font-mono text-tertiary">4,820 req/s</span></div><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-secondary-fixed">smart_toy</span><span class="text-on-surface">AI Architect:</span><span class="font-mono text-secondary-fixed">Active 24/7</span></div></div><div class="flex items-center gap-space-md font-label-sm text-label-sm text-on-surface-variant font-mono"><span class="text-on-surface-variant">LATENCY <strong class="text-secondary font-normal">12ms</strong></span><span class="text-on-surface-variant">MEM <strong class="text-on-surface font-normal">842MB</strong></span><span class="text-on-surface-variant">GPU <strong class="text-primary font-normal">61%</strong></span></div></div></div></header><aside class="fixed left-0 top-20 bottom-0 w-72 bg-surface-container-lowest/95 backdrop-blur-xl z-40 flex flex-col justify-between border-r border-outline-variant/30"><div class="flex flex-col flex-1 p-space-sm overflow-y-auto"><div class="px-space-sm py-space-xs mb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-widest text-outline font-semibold">TACTICAL COCKPIT</span></div><nav class="space-y-1" data-active-classes="bg-surface-container-high text-primary border-l-2 border-primary font-semibold"><a aria-current="page" class="flex items-center gap-space-sm px-space-md py-2.5 rounded transition-all bg-surface-container-high text-primary border-l-2 border-primary font-semibold" data-path="districts-and-zoning" href="#"><span class="material-symbols-outlined text-[18px]">grid_view</span><span>Districts &amp; Zoning</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="ast-metrics-filter" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span>AST Metrics Filter</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="traffic-flow-interceptors" href="#"><span class="material-symbols-outlined text-[18px]">alt_route</span><span>Traffic Flow Interceptors</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="predictive-architect-holograms" href="#"><span class="material-symbols-outlined text-[18px]">view_in_ar</span><span>Predictive Architect Holograms</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="terminal-and-daemon-logs" href="#"><span class="material-symbols-outlined text-[18px]">terminal</span><span>Terminal &amp; Daemon Logs</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="settings-and-electron-engine" href="#"><span class="material-symbols-outlined text-[18px]">settings_input_component</span><span>Settings &amp; Electron Engine</span></a></nav></div><div class="p-space-sm bg-surface-container-low border-t border-outline-variant/20"><div class="flex items-center justify-between px-space-sm py-1 font-label-sm text-label-sm text-on-surface-variant"><span class="flex items-center gap-1 font-mono text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>CORE DAEMON OK</span><span class="font-mono text-[10px] text-outline">PID: 94102</span></div></div></aside><div class="pl-72"><main class="relative pt-20 w-full min-h-screen bg-surface px-space-lg py-space-lg"><div class="flex flex-col w-full gap-space-lg">
+<!-- Top Command Matrix: Repository Meta & Realtime AST Engine -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-md items-stretch">
+<!-- Active Repository & Engine Telemetry -->
+<div class="xl:col-span-8 bg-surface-container rounded-xl p-space-lg flex flex-col justify-between shadow-xl relative overflow-hidden">
+<div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex flex-col gap-space-sm z-10">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded">CORE PARSING SUBSYSTEM</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">BUILD_HASH: <span class="text-secondary font-semibold">9f84a1e</span></span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-md py-1 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface transition-all flex items-center gap-1 font-label-md text-label-md" id="btn-reparse">
+<span class="material-symbols-outlined text-[16px] text-primary" id="reparse-icon">sync</span>
+<span>RE-PARSE AST</span>
+</button>
+<button class="px-space-md py-1 rounded bg-primary text-on-primary font-label-md text-label-md font-semibold hover:shadow-[0_0_16px_-4px_rgba(6,182,212,0.6)] transition-all">
+              EXPORT MANIFEST
+            </button>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-baseline gap-space-sm mt-1">
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">enterprise/fintech-monolith-api</h1>
+<span class="font-label-sm text-label-sm text-secondary bg-secondary/10 px-2 py-0.5 rounded self-start">Django 5.0 + React 18 + PostgreSQL 16 + Celery</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-2xl">
+          Engine: <span class="text-primary font-mono font-medium">Native Tree-sitter &amp; Python ast module via Node.js native binding (libuv async worker thread pool)</span>. Spatial layout engine dynamically maps syntactical hierarchies into volumetric district structures.
+        </p>
+</div>
+<!-- Quantified Spatial AST Metric Pills -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-sm mt-space-lg pt-space-md bg-surface-container-low rounded-lg p-space-md z-10">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">FILES INGESTED</span>
+<span class="font-headline-md text-headline-md font-bold text-on-surface font-mono">1,428</span>
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">check_circle</span> 100% indexed
+          </span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">LINES OF CODE</span>
+<span class="font-headline-md text-headline-md font-bold text-primary font-mono">482,900</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Avg 338 LOC/File</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">ACTIVE AST NODES</span>
+<span class="font-headline-md text-headline-md font-bold text-on-surface font-mono">9,840</span>
+<span class="font-label-sm text-label-sm text-primary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">account_tree</span> 3D Meshed
+          </span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">CIRCULAR DEP.</span>
+<span class="font-headline-md text-headline-md font-bold text-tertiary font-mono">184</span>
+<span class="font-label-sm text-label-sm text-error flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">warning</span> High Coupling
+          </span>
+</div>
+</div>
+</div>
+<!-- Daemon Diagnostic HUD Ring -->
+<div class="xl:col-span-4 bg-surface-container rounded-xl p-space-lg shadow-xl flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-semibold">ELECTRON CORE DAEMON</span>
+<span class="w-2.5 h-2.5 rounded-full bg-secondary animate-ping"></span>
+</div>
+<div class="flex items-center justify-around my-space-sm">
+<div class="relative flex items-center justify-center">
+<svg class="w-28 h-28 transform -rotate-90">
+<circle class="text-surface-variant" cx="56" cy="56" fill="transparent" r="46" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-primary" cx="56" cy="56" fill="transparent" r="46" stroke="currentColor" stroke-dasharray="289" stroke-dashoffset="238" stroke-linecap="round" stroke-width="6"></circle>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="font-label-sm text-label-sm text-outline">VRAM / RAM</span>
+<span class="font-label-lg text-label-lg font-bold font-mono text-on-surface">17.5%</span>
+<span class="font-label-sm text-label-sm text-primary font-mono">1.4/8.0 GB</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs font-mono">
+<div class="flex items-center justify-between gap-space-md text-body-sm">
+<span class="text-on-surface-variant">HOST PID:</span>
+<span class="text-on-surface font-bold">94102</span>
+</div>
+<div class="flex items-center justify-between gap-space-md text-body-sm">
+<span class="text-on-surface-variant">IPC SOCK:</span>
+<span class="text-secondary font-bold">/tmp/cc.sock</span>
+</div>
+<div class="flex items-center justify-between gap-space-md text-body-sm">
+<span class="text-on-surface-variant">FRAME TIME:</span>
+<span class="text-primary font-bold">16.2 ms (60 FPS)</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-tertiary">memory</span>
+<span class="text-on-surface">WebGL 2.0 / Discrete Metal</span>
+</div>
+<span class="font-label-sm text-label-sm bg-secondary/15 text-secondary px-2 py-0.5 rounded font-mono font-semibold">RTX_ACTIVE</span>
+</div>
+</div>
+</div>
+<!-- Main Split Architecture: District Zoning vs Procedural Scales -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-start">
+<!-- LEFT: District Zoning Configuration Matrix (8 cols) -->
+<div class="lg:col-span-8 flex flex-col gap-space-md">
+<div class="bg-surface-container rounded-xl p-space-lg shadow-xl">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-primary">location_city</span>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Urban Architectural Zoning Rules</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">AST semantic node tagging mapped directly to procedural city archetypes</p>
+</div>
+</div>
+<button class="font-label-sm text-label-sm uppercase tracking-wider px-space-md py-1 bg-surface-container-high hover:bg-surface-variant rounded text-primary transition-all">
+            + CUSTOM DISTRICT
+          </button>
+</div>
+<!-- Matrix Cards Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<!-- Zone 1: Commercial (Frontend) -->
+<div class="bg-surface-container-low rounded-lg p-space-md flex flex-col justify-between group hover:bg-surface-container-high transition-all">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">domain</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg font-bold text-on-surface">Commercial District</h3>
+<span class="font-label-sm text-label-sm text-primary uppercase font-mono">Blue Glass Skyscrapers</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">428 NODES</span>
+</div>
+<div class="my-space-md space-y-space-xs font-mono text-body-sm">
+<div class="bg-surface-container rounded p-1.5 flex items-center justify-between">
+<span class="text-on-surface-variant text-[11px]">Match Pattern:</span>
+<span class="text-on-surface text-[11px] font-semibold">*.tsx, *.jsx, components/**</span>
+</div>
+<div class="bg-surface-container rounded p-1.5 flex items-center justify-between">
+<span class="text-on-surface-variant text-[11px]">Material Shading:</span>
+<span class="text-primary text-[11px]">Specular Glass Refract (0.82)</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-sm text-label-sm text-outline">Volumetric Height: Max 480m</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface after:rounded-full after:h-3 after:w-3 after:transition-all"></div>
+</label>
+</div>
+</div>
+<!-- Zone 2: Industrial (Models/ORM) -->
+<div class="bg-surface-container-low rounded-lg p-space-md flex flex-col justify-between group hover:bg-surface-container-high transition-all">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-secondary/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">factory</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg font-bold text-on-surface">Industrial District</h3>
+<span class="font-label-sm text-label-sm text-secondary uppercase font-mono">Green Concrete Silos</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm bg-secondary/10 text-secondary px-1.5 py-0.5 rounded font-mono">216 NODES</span>
+</div>
+<div class="my-space-md space-y-space-xs font-mono text-body-sm">
+<div class="bg-surface-container rounded p-1.5 flex items-center justify-between">
+<span class="text-on-surface-variant text-[11px]">Match Pattern:</span>
+<span class="text-on-surface text-[11px] font-semibold">models.py, entities/**, schema.py</span>
+</div>
+<div class="bg-surface-container rounded p-1.5 flex items-center justify-between">
+<span class="text-on-surface-variant text-[11px]">Material Shading:</span>
+<span class="text-secondary text-[11px]">Brutalist Concrete Roughness (0.95)</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-sm text-label-sm text-outline">Volumetric Height: Max 190m</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface peer-checked:bg-secondary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface after:rounded-full after:h-3 after:w-3 after:transition-all"></div>
+</label>
+</div>
+</div>
+<!-- Zone 3: Financial (API & Routers) -->
+<div class="bg-surface-container-low rounded-lg p-space-md flex flex-col justify-between group hover:bg-surface-container-high transition-all">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-tertiary/20 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">account_balance</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg font-bold text-on-surface">Financial District</h3>
+<span class="font-label-sm text-label-sm text-tertiary uppercase font-mono">Gold High-rises &amp; Towers</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm bg-tertiary/10 text-tertiary px-1.5 py-0.5 rounded font-mono">312 NODES</span>
+</div>
+<div class="my-space-md space-y-space-xs font-mono text-body-sm">
+<div class="bg-surface-container rounded p-1.5 flex items-center justify-between">
+<span class="text-on-surface-variant text-[11px]">Match Pattern:</span>
+<span class="text-on-surface text-[11px] font-semibold">views.py, urls.py, routes/*.py</span>
+</div>
+<div class="bg-surface-container rounded p-1.5 flex items-center justify-between">
+<span class="text-on-surface-variant text-[11px]">Material Shading:</span>
+<span class="text-tertiary text-[11px]">Anodized Brass Sheen (0.45)</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-sm text-label-sm text-outline">Volumetric Height: Max 620m</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface peer-checked:bg-tertiary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface after:rounded-full after:h-3 after:w-3 after:transition-all"></div>
+</label>
+</div>
+</div>
+<!-- Zone 4: Government (Async Queues & Workers) -->
+<div class="bg-surface-container-low rounded-lg p-space-md flex flex-col justify-between group hover:bg-surface-container-high transition-all">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded bg-primary-container/20 flex items-center justify-center text-primary-fixed">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg font-bold text-on-surface">Government District</h3>
+<span class="font-label-sm text-label-sm text-primary-fixed uppercase font-mono">Purple Power Plants</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm bg-primary-container/10 text-primary-fixed px-1.5 py-0.5 rounded font-mono">94 NODES</span>
+</div>
+<div class="my-space-md space-y-space-xs font-mono text-body-sm">
+<div class="bg-surface-container rounded p-1.5 flex items-center justify-between">
+<span class="text-on-surface-variant text-[11px]">Match Pattern:</span>
+<span class="text-on-surface text-[11px] font-semibold">tasks.py, celery.py, workers/**</span>
+</div>
+<div class="bg-surface-container rounded p-1.5 flex items-center justify-between">
+<span class="text-on-surface-variant text-[11px]">Material Shading:</span>
+<span class="text-primary-fixed text-[11px]">Plasma Core Emission (1.40)</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-sm text-label-sm text-outline">Volumetric Height: Max 280m</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface peer-checked:bg-primary-container after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface after:rounded-full after:h-3 after:w-3 after:transition-all"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Procedural Dimension Sliders Matrix -->
+<div class="bg-surface-container rounded-xl p-space-lg shadow-xl">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-secondary">straighten</span>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Procedural Building Dimension Mappings</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Calibrate real-world code metrics to spatial 3D building physics</p>
+</div>
+</div>
+<button class="font-label-sm text-label-sm text-outline hover:text-on-surface underline" id="btn-reset-sliders">Reset Defaults</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-lg">
+<!-- Slider 1: Height -->
+<div class="flex flex-col gap-space-sm bg-surface-container-low p-space-md rounded-lg">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm font-semibold uppercase text-primary">HEIGHT (Y-AXIS)</span>
+<span class="font-mono text-label-sm text-on-surface bg-surface-container px-2 py-0.5 rounded font-bold" id="label-height-val">1u / 10 LOC</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Lines of Code (LOC) sets skyscraper elevation.</p>
+<input class="w-full h-1.5 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-primary" id="slider-height" max="50" min="1" type="range" value="10"/>
+<div class="flex justify-between font-label-sm text-label-sm text-outline font-mono">
+<span>1u:5LOC</span>
+<span>1u:10LOC</span>
+<span>1u:50LOC</span>
+</div>
+</div>
+<!-- Slider 2: Footprint -->
+<div class="flex flex-col gap-space-sm bg-surface-container-low p-space-md rounded-lg">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm font-semibold uppercase text-secondary">FOOTPRINT (X/Z)</span>
+<span class="font-mono text-label-sm text-on-surface bg-surface-container px-2 py-0.5 rounded font-bold" id="label-footprint-val">1m / Method</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Total method/function count controls parcel perimeter.</p>
+<input class="w-full h-1.5 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-secondary" id="slider-footprint" max="5" min="0.5" step="0.5" type="range" value="1"/>
+<div class="flex justify-between font-label-sm text-label-sm text-outline font-mono">
+<span>0.5m</span>
+<span>1.0m</span>
+<span>5.0m</span>
+</div>
+</div>
+<!-- Slider 3: Smog & Wear -->
+<div class="flex flex-col gap-space-sm bg-surface-container-low p-space-md rounded-lg">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm font-semibold uppercase text-tertiary">WEAR &amp; SMOG</span>
+<span class="font-mono text-label-sm text-on-surface bg-surface-container px-2 py-0.5 rounded font-bold" id="label-wear-val">Churn x Complexity</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Cyclomatic complexity &amp; 30-day git churn emit particulate fog.</p>
+<input class="w-full h-1.5 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-tertiary" id="slider-wear" max="100" min="0" type="range" value="68"/>
+<div class="flex justify-between font-label-sm text-label-sm text-outline font-mono">
+<span>Clean City</span>
+<span>Turbid (68%)</span>
+<span>Toxic Smog</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT: Electron Desktop & Daemon Control Deck (4 cols) -->
+<div class="lg:col-span-4 flex flex-col gap-space-md">
+<!-- Interceptor Daemon Panel -->
+<div class="bg-surface-container rounded-xl p-space-lg shadow-xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-secondary">router</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">Local Interceptors</h2>
+</div>
+<span class="font-label-sm text-label-sm bg-secondary/10 text-secondary px-2 py-0.5 rounded font-mono font-bold">ONLINE</span>
+</div>
+<div class="space-y-space-xs font-mono">
+<!-- Port 8080 Interceptor -->
+<div class="bg-surface-container-low p-space-md rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<div class="flex flex-col">
+<span class="text-body-sm font-bold text-on-surface">Django WSGI</span>
+<span class="text-label-sm text-on-surface-variant">127.0.0.1:8080</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container px-1.5 py-0.5 rounded">HOOKED</span>
+<button class="p-1 text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">pause_circle</span>
+</button>
+</div>
+</div>
+<!-- Port 5432 Interceptor -->
+<div class="bg-surface-container-low p-space-md rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<div class="flex flex-col">
+<span class="text-body-sm font-bold text-on-surface">PostgreSQL PCAP</span>
+<span class="text-label-sm text-on-surface-variant">127.0.0.1:5432</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container px-1.5 py-0.5 rounded">PCAP DRV</span>
+<button class="p-1 text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">pause_circle</span>
+</button>
+</div>
+</div>
+</div>
+<div class="p-space-sm bg-surface-container-low rounded-lg text-body-sm text-on-surface-variant flex items-center justify-between">
+<span>Active Packet Buffer:</span>
+<span class="font-mono text-on-surface font-bold">12,410 pkts/sec</span>
+</div>
+</div>
+<!-- AI Provider & Intelligence Config -->
+<div class="bg-surface-container rounded-xl p-space-lg shadow-xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-primary">psychology</span>
+<h2 class="font-headline-md text-headline-md text-on-surface font-semibold">AI Architect Engine</h2>
+</div>
+<span class="font-label-sm text-label-sm bg-primary/10 text-primary px-2 py-0.5 rounded font-mono">GEMINI 1.5 PRO</span>
+</div>
+<div class="space-y-space-sm">
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-outline uppercase font-mono">API Key Configuration</label>
+<div class="flex items-center gap-space-xs">
+<input class="bg-surface-container-low text-on-surface font-mono text-body-sm px-space-md py-1.5 rounded flex-1 outline-none focus:ring-1 focus:ring-primary" readonly="" type="password" value="sk-ai-gemini-live-prod-88491x7"/>
+<button class="px-space-md py-1.5 bg-surface-container-high hover:bg-surface-variant rounded text-on-surface font-label-sm text-label-sm">
+                EDIT
+              </button>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-xs font-mono">
+<div class="bg-surface-container-low p-2 rounded">
+<span class="text-label-sm text-outline block">ROUNDTRIP</span>
+<span class="text-body-sm font-bold text-secondary">180 ms</span>
+</div>
+<div class="bg-surface-container-low p-2 rounded">
+<span class="text-label-sm text-outline block">SUGGESTION QUEUE</span>
+<span class="text-body-sm font-bold text-primary">12 Ready</span>
+</div>
+</div>
+<div class="p-space-sm bg-surface-container-low rounded-lg flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface">Auto-Hologram Preview</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-8 h-4 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface after:rounded-full after:h-3 after:w-3 after:transition-all"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Quick AST Visualizer Live Thumbnail -->
+<div class="bg-surface-container rounded-xl p-space-md shadow-xl flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase font-mono text-outline">CITY RADAR PREVIEW</span>
+<span class="font-label-sm text-label-sm text-secondary font-mono">LIVE CAM 01</span>
+</div>
+<div class="relative w-full h-36 bg-surface-container-lowest rounded-lg overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover opacity-60" data-alt="A dark cybernetic 3D digital twin city skyline visualization with neon cyan and green glowing wireframe building heights and data particle conduits flowing between skyscrapers at midnight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1skB2jMRj1PBZje3d2D3_0_ZgiqPIlWUHJBNd9pF9hjS6ZpOiL4iHStddu_yH8IXxAgNyAUdNLIDhf0QffBZgowSiS7Z3Zc8IGYi2grDYcIWBjitYUh8cUJwraojIA_g9XyiruHV8qol7r0Y1KAQN51QzNy8SXuTwM21qPlzv9EunDJzqryc0Mdg6RjAt2jZRGwLM4HxS3wmKtbrSybJ-Bkv21c1l_W1MHpjsRCALphDwu-BsfBd6"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+<div class="absolute bottom-2 left-2 flex items-center gap-space-xs font-mono font-label-sm text-label-sm text-on-surface bg-surface-container-lowest/80 px-2 py-0.5 rounded">
+<span class="material-symbols-outlined text-[12px] text-primary">3d_rotation</span>
+<span>GRID: X:412 Y:88 Z:904</span>
+</div>
+<button class="absolute top-2 right-2 px-2 py-1 rounded bg-primary/20 text-primary hover:bg-primary hover:text-on-primary font-label-sm text-label-sm font-semibold transition-all backdrop-blur-sm">
+            EXPAND VIEWPORT
+          </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple interactive micro-events for sliders and re-parsing
+  document.getElementById('slider-height')?.addEventListener('input', (e) => {
+    const el = document.getElementById('label-height-val');
+    if (el) el.textContent = `1u / ${e.target.value} LOC`;
+  });
+
+  document.getElementById('slider-footprint')?.addEventListener('input', (e) => {
+    const el = document.getElementById('label-footprint-val');
+    if (el) el.textContent = `${e.target.value}m / Method`;
+  });
+
+  document.getElementById('slider-wear')?.addEventListener('input', (e) => {
+    const el = document.getElementById('label-wear-val');
+    if (el) {
+      const val = e.target.value;
+      el.textContent = val > 75 ? 'Toxic Smog (' + val + '%)' : (val > 30 ? 'Turbid (' + val + '%)' : 'Clean City');
+    }
+  });
+
+  document.getElementById('btn-reset-sliders')?.addEventListener('click', () => {
+    const h = document.getElementById('slider-height');
+    const f = document.getElementById('slider-footprint');
+    const w = document.getElementById('slider-wear');
+    if (h) { h.value = 10; h.dispatchEvent(new Event('input')); }
+    if (f) { f.value = 1; f.dispatchEvent(new Event('input')); }
+    if (w) { w.value = 68; w.dispatchEvent(new Event('input')); }
+  });
+
+  document.getElementById('btn-reparse')?.addEventListener('click', function() {
+    const icon = document.getElementById('reparse-icon');
+    if (icon) {
+      icon.classList.add('animate-spin');
+      setTimeout(() => {
+        icon.classList.remove('animate-spin');
+      }, 1200);
+    }
+  });
+</script></main></div></body></html>
