@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {"darkMode":"class","theme":{"extend":{"colors":{"on-secondary-fixed-variant":"#005236","on-primary":"#003640","on-primary-fixed-variant":"#004e5c","on-tertiary-container":"#563400","surface-variant":"#31353e","secondary-container":"#00a572","secondary":"#4edea3","surface-container-highest":"#31353e","on-tertiary-fixed-variant":"#653e00","secondary-fixed":"#6ffbbe","primary":"#4cd7f6","error-container":"#93000a","on-surface":"#dfe2ee","surface":"#0f131c","on-error":"#690005","surface-dim":"#0f131c","on-surface-variant":"#bcc9cd","on-primary-container":"#00424f","tertiary-fixed":"#ffddb8","surface-bright":"#353942","on-secondary-fixed":"#002113","background":"#0f131c","on-background":"#dfe2ee","outline":"#869397","surface-tint":"#4cd7f6","on-tertiary-fixed":"#2a1700","tertiary-container":"#e79400","primary-container":"#06b6d4","primary-fixed-dim":"#4cd7f6","surface-container-high":"#262a33","tertiary-fixed-dim":"#ffb95f","on-primary-fixed":"#001f26","inverse-on-surface":"#2c3039","on-error-container":"#ffdad6","surface-container":"#1c2028","secondary-fixed-dim":"#4edea3","inverse-primary":"#00687a","outline-variant":"#3d494c","error":"#ffb4ab","on-secondary":"#003824","tertiary":"#ffb95f","on-secondary-container":"#00311f","surface-container-lowest":"#0a0e16","surface-container-low":"#181c24","on-tertiary":"#472a00","primary-fixed":"#acedff","inverse-surface":"#dfe2ee"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"space-md":"0.75rem","margin":"1rem","space-lg":"1rem","space-sm":"0.5rem","gutter":"0.75rem","space-xs":"0.25rem","space-xl":"1.5rem"},"fontFamily":{"label-sm":["JetBrains Mono"],"headline-xl":["Space Grotesk"],"body-md":["Inter"],"body-sm":["Inter"],"headline-lg":["Space Grotesk"],"body-lg":["Inter"],"label-md":["JetBrains Mono"],"code-snippet":["JetBrains Mono"],"headline-md":["Space Grotesk"],"headline-xl-mobile":["Space Grotesk"],"label-lg":["JetBrains Mono"]},"fontSize":{"label-sm":["10px",{"lineHeight":"12px","letterSpacing":"0.08em","fontWeight":"400"}],"headline-xl":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-lg":["28px",{"lineHeight":"36px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-md":["11px",{"lineHeight":"14px","letterSpacing":"0.06em","fontWeight":"500"}],"code-snippet":["12px",{"lineHeight":"18px","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"0em","fontWeight":"600"}],"headline-xl-mobile":["30px",{"lineHeight":"38px","letterSpacing":"-0.02em","fontWeight":"700"}],"label-lg":["13px",{"lineHeight":"18px","letterSpacing":"0.04em","fontWeight":"500"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="h-20 w-full px-space-lg flex flex-col justify-between py-space-xs"><div class="flex items-center justify-between w-full h-9"><div class="flex items-center gap-space-md"><div class="flex items-center gap-1.5 pr-space-sm"><span class="w-3 h-3 rounded-full bg-[#ff5f56] inline-block shadow-[0_0_6px_rgba(255,95,86,0.6)]"></span><span class="w-3 h-3 rounded-full bg-[#ffbd2e] inline-block shadow-[0_0_6px_rgba(255,189,46,0.6)]"></span><span class="w-3 h-3 rounded-full bg-[#27c93f] inline-block shadow-[0_0_6px_rgba(39,201,63,0.6)]"></span></div><div class="flex items-center gap-space-sm pl-space-xs"><span class="font-headline-md text-headline-md tracking-tight font-bold text-primary">CodeCity</span><span class="font-label-sm text-label-sm uppercase text-on-surface-variant/70 tracking-widest">// Spatial Runtime v3.4</span></div><div class="hidden xl:flex items-center gap-space-xs bg-surface-container px-space-md py-1 rounded border border-outline-variant/30 text-on-surface"><span class="material-symbols-outlined text-[14px] text-primary">account_tree</span><span class="font-code-snippet text-code-snippet text-on-surface font-medium">github.com/enterprise/fintech-monolith-api</span><span class="font-label-sm text-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-secondary font-mono">main/live</span></div></div><nav class="hidden md:flex items-center gap-1 bg-surface-container-low p-1 rounded-lg" data-active-classes="bg-primary text-on-primary font-bold shadow-[0_0_12px_rgba(6,182,212,0.4)]"><a class="px-space-md py-1 rounded font-label-md text-label-md uppercase tracking-wider text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="city-ast-view" href="#">3D City AST</a><a class="px-space-md py-1 rounded font-label-md text-label-md uppercase tracking-wider text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="traffic-telemetry" href="#">Traffic Telemetry</a><a aria-current="page" class="px-space-md py-1 rounded uppercase tracking-wider transition-colors bg-primary text-on-primary font-bold shadow-[0_0_12px_rgba(6,182,212,0.4)]" data-path="ai-refactor-studio" href="#">AI Refactor Studio</a><a class="px-space-md py-1 rounded font-label-md text-label-md uppercase tracking-wider text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" data-path="chaos-engineering-mode" href="#">Chaos Engineering</a></nav><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-high px-2 py-1 rounded border border-outline-variant/40"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-label-sm text-label-sm text-on-surface">PORT:8080</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-1 ring-primary/40" src="https://lh3.googleusercontent.com/aida/AEtjO1UU32QFmILjsNagZF6I5nFWUHYpAFQGyABgwFUWl8Ev4IV6LerbjYobv59C9bX8i_QYX3Haa9UCrHuWzZSego1L5CcW6mfankDR8bMfC2-7fqDpz9W4il1vs83lgFdThmIaFGbP0VBwdmHi9J6sIpG9zK-jLOENVTKP0-ixWoTk9VnylQP2LGpGVseEdWQiVN5vjkGZR1Wf7jyxncr35vCc395fIPjbcCCDvQdF-u-GwaPOrsFTbkFYLY4"/></div></div><div class="flex items-center justify-between w-full h-7 overflow-x-auto gap-space-md pt-0.5 border-t border-outline-variant/20"><div class="flex items-center gap-space-md text-on-surface-variant"><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-primary">domain</span><span class="text-on-surface">AST Nodes:</span><span class="font-mono text-primary font-semibold">1,428 classes</span></div><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-secondary">lan</span><span class="text-on-surface">Interceptor:</span><span class="font-mono text-secondary">Connected :8080</span></div><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-tertiary">speed</span><span class="text-on-surface">Packets:</span><span class="font-mono text-tertiary">4,820 req/s</span></div><div class="flex items-center gap-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] text-secondary-fixed">smart_toy</span><span class="text-on-surface">AI Architect:</span><span class="font-mono text-secondary-fixed">Active 24/7</span></div></div><div class="flex items-center gap-space-md font-label-sm text-label-sm text-on-surface-variant font-mono"><span class="text-on-surface-variant">LATENCY <strong class="text-secondary font-normal">12ms</strong></span><span class="text-on-surface-variant">MEM <strong class="text-on-surface font-normal">842MB</strong></span><span class="text-on-surface-variant">GPU <strong class="text-primary font-normal">61%</strong></span></div></div></div></header><aside class="fixed left-0 top-20 bottom-0 w-72 bg-surface-container-lowest/95 backdrop-blur-xl z-40 flex flex-col justify-between border-r border-outline-variant/30"><div class="flex flex-col flex-1 p-space-sm overflow-y-auto"><div class="px-space-sm py-space-xs mb-space-xs"><span class="font-label-sm text-label-sm uppercase tracking-widest text-outline font-semibold">TACTICAL COCKPIT</span></div><nav class="space-y-1" data-active-classes="bg-surface-container-high text-primary border-l-2 border-primary font-semibold"><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="districts-and-zoning" href="#"><span class="material-symbols-outlined text-[18px]">grid_view</span><span>Districts &amp; Zoning</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="ast-metrics-filter" href="#"><span class="material-symbols-outlined text-[18px]">tune</span><span>AST Metrics Filter</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="traffic-flow-interceptors" href="#"><span class="material-symbols-outlined text-[18px]">alt_route</span><span>Traffic Flow Interceptors</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="predictive-architect-holograms" href="#"><span class="material-symbols-outlined text-[18px]">view_in_ar</span><span>Predictive Architect Holograms</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="terminal-and-daemon-logs" href="#"><span class="material-symbols-outlined text-[18px]">terminal</span><span>Terminal &amp; Daemon Logs</span></a><a class="flex items-center gap-space-sm px-space-md py-2.5 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-sm text-body-sm" data-path="settings-and-electron-engine" href="#"><span class="material-symbols-outlined text-[18px]">settings_input_component</span><span>Settings &amp; Electron Engine</span></a></nav></div><div class="p-space-sm bg-surface-container-low border-t border-outline-variant/20"><div class="flex items-center justify-between px-space-sm py-1 font-label-sm text-label-sm text-on-surface-variant"><span class="flex items-center gap-1 font-mono text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>CORE DAEMON OK</span><span class="font-mono text-[10px] text-outline">PID: 94102</span></div></div></aside><div class="pl-72"><main class="relative pt-20 w-full min-h-screen bg-surface px-space-lg py-space-lg"><div class="flex flex-col w-full gap-space-lg">
+<!-- AI AGENT TELEMETRY RUNTIME STRIP -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-low p-space-md shadow-lg">
+<div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute left-1/3 -bottom-20 w-80 h-32 bg-secondary/10 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md relative z-10">
+<div class="flex items-start md:items-center gap-space-md">
+<div class="relative flex items-center justify-center w-12 h-12 rounded-lg bg-surface-container-high text-primary shadow-sm">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<span class="absolute -top-1 -right-1 flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-secondary"></span>
+</span>
+</div>
+<div class="flex flex-col">
+<div class="flex flex-wrap items-center gap-2">
+<span class="font-headline-md text-headline-md tracking-tight text-on-surface">AI Predictive Architect Studio</span>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-primary-container/20 text-primary font-label-sm text-label-sm uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+              Gemini 1.5 Pro / GPT-4o Spatial Core
+            </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high text-secondary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">bolt</span>
+              Autonomous Loop Active
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-2 mt-0.5">
+<span class="material-symbols-outlined text-[15px] text-primary">visibility</span>
+            Observing AST <code class="font-code-snippet text-code-snippet text-primary px-1 rounded bg-surface-container">ASTParserService</code> &amp; Dynamic Live Traffic Stream on Postgres Avenue
+          </p>
+</div>
+</div>
+<!-- Lifetime Stats Counter -->
+<div class="flex items-center gap-4 bg-surface-container px-space-md py-2 rounded-lg shadow-inner">
+<div class="flex flex-col text-right">
+<span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Applied Refactors</span>
+<span class="font-headline-md text-headline-md font-bold text-on-surface">47 <span class="font-label-sm text-label-sm text-secondary font-normal">Patched</span></span>
+</div>
+<div class="w-px h-8 bg-surface-variant"></div>
+<div class="flex flex-col text-right">
+<span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Throughput Gain</span>
+<span class="font-headline-md text-headline-md font-bold text-secondary">+340%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- BENTO HIGH PRIORITY INCIDENT & MULTI-METRIC SUMMARY -->
+<div class="grid grid-cols-1 xl:grid-cols-4 gap-space-md">
+<!-- Incident Diagnostics Banner -->
+<div class="xl:col-span-3 rounded-xl bg-surface-container p-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-md shadow-md">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="w-10 h-10 rounded-lg bg-error-container/40 text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">traffic_jam</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm font-semibold uppercase px-1.5 py-0.5 rounded bg-error-container text-on-error-container">Critical Bottleneck</span>
+<span class="font-code-snippet text-code-snippet text-on-surface truncate">services/user/UserManager.py:184-245</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface mt-0.5 truncate">
+            Nested N+1 Query Cascade collapsing <span class="text-error font-medium">Avenida PostgresPool</span> under load peak.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="font-label-sm text-label-sm text-tertiary bg-tertiary-container/20 px-2 py-1 rounded flex items-center gap-1 font-mono">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+          148 SQL VEHICLES CONVERGING
+        </span>
+</div>
+</div>
+<!-- Quick Mode Selector -->
+<div class="xl:col-span-1 rounded-xl bg-surface-container p-space-md flex items-center justify-between shadow-md">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Engine Safety Guard</span>
+<span class="font-label-lg text-label-lg text-on-surface font-semibold flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+          Rollback Armed
+        </span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="safety-snapshot" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface peer-checked:bg-secondary-container after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-secondary after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+</label>
+</div>
+</div>
+<!-- DUAL AST CODE COMPARISON DIFF VISUALIZER -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-md">
+<!-- LEFT PANE: CONGESTED CODE -->
+<div class="flex flex-col rounded-xl bg-surface-container-lowest overflow-hidden shadow-xl">
+<!-- Pane Header -->
+<div class="flex items-center justify-between px-space-md py-space-sm bg-surface-container-low text-on-surface">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-error animate-pulse"></span>
+<span class="font-label-md text-label-md font-semibold text-error uppercase tracking-wider">Original Congested Code</span>
+<span class="font-code-snippet text-code-snippet text-on-surface-variant">UserManager.py : 184-245</span>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-error-container/30 text-error font-mono">
+          AST Depth: 4x Loops
+        </span>
+</div>
+<!-- Holographic City Collapse Callout -->
+<div class="mx-space-md mt-space-md p-space-sm rounded-lg bg-error-container/20 text-on-surface flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-error text-[20px] shrink-0">car_crash</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-error font-bold uppercase tracking-wider">Traffic Avenue Collapse Alert</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            💥 Genera <strong class="text-on-surface font-semibold">148 vehículos SQL simultáneos</strong> bloqueando la Avenida PostgresPool. Causando timeout cascading en el Gateway 3D.
+          </p>
+</div>
+</div>
+<!-- Code Inspector (Left) -->
+<div class="p-space-md overflow-x-auto font-code-snippet text-code-snippet leading-relaxed text-on-surface">
+<div class="flex gap-4">
+<!-- Line Numbers -->
+<div class="flex flex-col text-right select-none text-outline-variant font-mono space-y-1">
+<span>184</span><span>185</span><span>186</span><span>187</span><span>188</span><span>189</span><span>190</span><span>191</span>
+</div>
+<!-- Code Body with Highlights -->
+<div class="flex flex-col w-full space-y-1 font-mono">
+<div class="text-outline italic"># CAUSA DEL EMBOTELLAMIENTO VEHICULAR</div>
+<div><span class="text-primary">def</span> <span class="text-tertiary">get_user_workspace_profile</span>(user_id):</div>
+<div class="bg-error-container/20 px-2 py-0.5 rounded text-error flex items-center justify-between">
+<span>    user = User.objects.get(id=user_id)</span>
+<span class="text-outline-variant text-[11px] font-mono"># 1 query</span>
+</div>
+<div class="bg-error-container/30 px-2 py-0.5 rounded text-error flex items-center justify-between">
+<span> <span class="text-primary">for</span> org <span class="text-primary">in</span> user.organizations.all():</span>
+<span class="text-error text-[11px] font-mono"># N queries</span>
+</div>
+<div class="bg-error-container/40 px-2 py-0.5 rounded text-error font-bold flex items-center justify-between">
+<span> <span class="text-primary">for</span> member <span class="text-primary">in</span> org.members.all():</span>
+<span class="text-error text-[11px] font-mono"># N*M queries! (Gridlock)</span>
+</div>
+<div class="bg-error-container/30 px-2 py-0.5 rounded text-error">
+<span>            permissions.append(member.get_role())</span>
+</div>
+<div> <span class="text-primary">return</span> permissions</div>
+</div>
+</div>
+</div>
+<!-- City AST District Heatmap Footprint -->
+<div class="mt-auto p-space-md bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-error">apartment</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono uppercase">District: Auth-Monolith Heights</span>
+</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm text-error font-mono">
+<span>Congestion factor:</span>
+<span class="font-bold">94.2%</span>
+</div>
+</div>
+</div>
+<!-- RIGHT PANE: PREDICTIVE SOLUTION -->
+<div class="flex flex-col rounded-xl bg-surface-container-lowest overflow-hidden shadow-xl">
+<!-- Pane Header -->
+<div class="flex items-center justify-between px-space-md py-space-sm bg-surface-container-low text-on-surface">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-md text-label-md font-semibold text-secondary uppercase tracking-wider">Auto-Refactored Structural Solution</span>
+<span class="font-code-snippet text-code-snippet text-secondary-fixed">Architect V3 Suggested</span>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-secondary-container/30 text-secondary font-mono">
+          AST Depth: Flat Prefetch
+        </span>
+</div>
+<!-- Solution Benefit Callout -->
+<div class="mx-space-md mt-space-md p-space-sm rounded-lg bg-secondary-container/20 text-on-surface flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0">speed</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-secondary font-bold uppercase tracking-wider">Instant Flow Liberation</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            ⚡ Reduce el tráfico vehicular en <strong class="text-secondary font-semibold">98.6%</strong>. Libera la intersección al instante canalizando el payload en 1 batch micro-vectorial.
+          </p>
+</div>
+</div>
+<!-- Code Inspector (Right) -->
+<div class="p-space-md overflow-x-auto font-code-snippet text-code-snippet leading-relaxed text-on-surface">
+<div class="flex gap-4">
+<!-- Line Numbers -->
+<div class="flex flex-col text-right select-none text-outline-variant font-mono space-y-1">
+<span>184</span><span>185</span><span>186</span><span>187</span><span>188</span><span>189</span><span>190</span><span>191</span>
+</div>
+<!-- Code Body with Highlights -->
+<div class="flex flex-col w-full space-y-1 font-mono">
+<div class="text-secondary italic"># SOLUCIÓN GENERADA POR EL ARQUITECTO PREDICTIVO</div>
+<div class="bg-secondary-container/20 px-2 py-0.5 rounded text-secondary font-semibold">
+<span class="text-primary">@cache_memoize</span>(timeout=<span class="text-tertiary">300</span>)
+            </div>
+<div><span class="text-primary">def</span> <span class="text-secondary">get_user_workspace_profile</span>(user_id):</div>
+<div class="text-outline-variant text-[11px] italic">    # Reducido a 1 sola consulta SQL optimizada con prefetch</div>
+<div class="bg-secondary-container/30 px-2 py-0.5 rounded text-on-surface">
+<span>    user = User.objects.<span class="text-secondary font-bold">prefetch_related</span>(</span>
+</div>
+<div class="bg-secondary-container/30 px-2 py-0.5 rounded text-secondary-fixed">
+<span> <span class="text-tertiary">'organizations__members__role'</span></span>
+</div>
+<div class="bg-secondary-container/30 px-2 py-0.5 rounded text-on-surface">
+<span>    ).get(id=user_id)</span>
+</div>
+<div class="bg-secondary-container/20 px-2 py-0.5 rounded text-secondary font-bold">
+<span> <span class="text-primary">return</span> extract_consolidated_permissions(user)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- City AST District Heatmap Footprint -->
+<div class="mt-auto p-space-md bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">verified_user</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono uppercase">Target Skyscraper: Modular Tower 4B</span>
+</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm text-secondary font-mono">
+<span>Target Congestion:</span>
+<span class="font-bold">1.4% (Green Flow)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- VERIFICATION SIMULATION & ACTION BAR -->
+<div class="rounded-xl bg-surface-container-high p-space-md shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-space-md">
+<!-- Left interactive trigger -->
+<div class="flex flex-wrap items-center gap-space-sm w-full lg:w-auto">
+<button class="flex items-center gap-2 px-space-md py-2.5 rounded bg-surface-container text-primary hover:bg-surface-variant active:scale-95 transition-all font-label-md text-label-md uppercase tracking-wider shadow-sm" id="btn-simulate">
+<span class="material-symbols-outlined text-[20px] text-primary">view_in_ar</span>
+<span>Simular Descongestión en 3D</span>
+</button>
+<button class="flex items-center gap-2 px-space-md py-2.5 rounded bg-surface-container-lowest text-on-surface hover:text-primary transition-all font-label-md text-label-md font-mono" id="btn-branch">
+<span class="material-symbols-outlined text-[18px]">fork_right</span>
+<span>git checkout -b fix/ast-traffic-n1</span>
+</button>
+</div>
+<!-- Right Primary CTA & Safety info -->
+<div class="flex flex-wrap items-center gap-space-md justify-end w-full lg:w-auto">
+<div class="hidden sm:flex flex-col text-right">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-mono">Rollback Point</span>
+<span class="font-code-snippet text-code-snippet text-on-surface font-semibold font-mono">snap_9a8f4c21.ast</span>
+</div>
+<button class="flex items-center gap-2 px-space-lg py-3 rounded bg-primary-container text-on-primary hover:bg-primary active:scale-98 transition-all font-label-lg text-label-lg font-bold uppercase tracking-wider shadow-[0_0_24px_rgba(6,182,212,0.45)]" id="btn-apply-refactor">
+<span class="material-symbols-outlined text-[22px]">rocket_launch</span>
+<span>APLICAR AUTO-REFACTOR (SOBRESCRIBIR EN DISCO)</span>
+</button>
+</div>
+</div>
+<!-- PERFORMANCE IMPACT FORECAST & CITY GEOMETRY CARD -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- KPI 1: LATENCY DROP -->
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col justify-between shadow-md relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase text-on-surface-variant font-mono">Response Time (P99)</span>
+<span class="material-symbols-outlined text-[18px] text-secondary">speed</span>
+</div>
+<div class="my-space-md flex items-baseline gap-3">
+<span class="font-headline-xl text-headline-xl font-bold text-secondary">18<span class="text-headline-md">ms</span></span>
+<span class="font-label-lg text-label-lg line-through text-outline-variant">840ms</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-secondary-container/30 text-secondary font-bold">-97.8%</span>
+</div>
+<!-- Vector Sparkline Comparison -->
+<div class="w-full h-12 flex items-end gap-1 pt-2">
+<div class="flex-1 bg-error/40 h-[92%] rounded-t-sm" title="Before: 840ms"></div>
+<div class="flex-1 bg-error/50 h-[88%] rounded-t-sm"></div>
+<div class="flex-1 bg-error/40 h-[95%] rounded-t-sm"></div>
+<div class="flex-1 bg-error/30 h-[80%] rounded-t-sm"></div>
+<div class="w-2 flex items-center justify-center text-outline-variant font-mono text-[10px]">→</div>
+<div class="flex-1 bg-secondary h-[18%] rounded-t-sm" title="After: 18ms"></div>
+<div class="flex-1 bg-secondary h-[14%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[16%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[12%] rounded-t-sm"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant mt-2 font-mono">
+<span>Pre-Refactor Peak</span>
+<span class="text-secondary font-semibold">Post-Refactor P99</span>
+</div>
+</div>
+<!-- KPI 2: CPU LOAD FORECAST -->
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col justify-between shadow-md">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase text-on-surface-variant font-mono">Database CPU Stress</span>
+<span class="material-symbols-outlined text-[18px] text-primary">memory</span>
+</div>
+<div class="my-space-md flex items-baseline gap-3">
+<span class="font-headline-xl text-headline-xl font-bold text-primary">12<span class="text-headline-md">%</span></span>
+<span class="font-label-lg text-label-lg line-through text-outline-variant">91%</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-primary-container/20 text-primary font-bold">-79% Core</span>
+</div>
+<!-- Segmented linear gauge -->
+<div class="w-full space-y-1.5">
+<div class="flex justify-between font-label-sm text-label-sm font-mono text-on-surface-variant">
+<span>Worker Pool Saturation</span>
+<span class="text-primary font-bold">12 / 100 threads</span>
+</div>
+<div class="w-full h-3 rounded bg-surface-container-highest overflow-hidden flex">
+<div class="bg-primary h-full rounded" style="width: 12%;"></div>
+</div>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant mt-2 font-mono">
+<span>Postgres Connection Pool</span>
+<span class="text-primary">148 → 1 Conns</span>
+</div>
+</div>
+<!-- KPI 3: 3D SKYSCRAPER GEOMETRY OPTIMIZATION -->
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col justify-between shadow-md">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase text-on-surface-variant font-mono">Skyscraper Mass Modularization</span>
+<span class="material-symbols-outlined text-[18px] text-tertiary">domain_verification</span>
+</div>
+<div class="my-space-md flex items-baseline gap-3">
+<span class="font-headline-xl text-headline-xl font-bold text-tertiary">-18<span class="text-headline-md">%</span></span>
+<span class="font-label-lg text-label-lg text-outline-variant">Spatial Height</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-bold">Code Cleanse</span>
+</div>
+<!-- Vector City Skyline representation -->
+<div class="w-full flex items-end justify-center gap-2 h-12 pt-2">
+<div class="w-5 bg-surface-container-highest h-8 rounded-t-sm"></div>
+<div class="w-6 bg-error/60 h-full rounded-t-sm relative">
+<div class="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[9px] font-mono text-error font-bold">-18%</div>
+</div>
+<div class="w-6 bg-secondary/80 h-9 rounded-t-sm"></div>
+<div class="w-5 bg-surface-container-highest h-6 rounded-t-sm"></div>
+<div class="w-4 bg-surface-container-highest h-10 rounded-t-sm"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant mt-2 font-mono">
+<span>Bloated AST Monolith</span>
+<span class="text-secondary font-semibold">Normalized Geometry</span>
+</div>
+</div>
+</div>
+<!-- SIMULATION STATUS FLOATING TOAST (Dynamic feedback) -->
+<div class="hidden transition-all duration-300 rounded-xl bg-secondary-container/20 p-space-md flex items-center justify-between" id="sim-status-banner">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[24px] animate-spin">autorenew</span>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface">3D Congestion Clearing Simulation Active</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Re-routing 148 stalled vehicles through PostgresPool Viaduct into fast lane cache buffers.</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm font-mono text-secondary uppercase px-2 py-1 rounded bg-surface-container-high">Simulation Render: 60 FPS</span>
+</div>
+</div>
+<script>
+  (function() {
+    const btnSimulate = document.getElementById('btn-simulate');
+    const simStatusBanner = document.getElementById('sim-status-banner');
+    const btnApply = document.getElementById('btn-apply-refactor');
+    const btnBranch = document.getElementById('btn-branch');
+
+    if (btnSimulate && simStatusBanner) {
+      btnSimulate.addEventListener('click', function() {
+        simStatusBanner.classList.remove('hidden');
+        btnSimulate.classList.add('bg-primary', 'text-on-primary');
+        setTimeout(() => {
+          simStatusBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+      });
+    }
+
+    if (btnApply) {
+      btnApply.addEventListener('click', function() {
+        const originalText = btnApply.innerHTML;
+        btnApply.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin">sync</span> REFACTORING DISK FILE...';
+        btnApply.classList.add('opacity-80', 'pointer-events-none');
+        
+        setTimeout(() => {
+          btnApply.innerHTML = '<span class="material-symbols-outlined text-[20px]">check_circle</span> ARCHITECTURE APPLIED & VERIFIED';
+          btnApply.classList.remove('opacity-80', 'pointer-events-none');
+          btnApply.classList.replace('bg-primary-container', 'bg-secondary');
+          btnApply.classList.replace('text-on-primary', 'text-on-secondary');
+        }, 1200);
+      });
+    }
+
+    if (btnBranch) {
+      btnBranch.addEventListener('click', function() {
+        const original = btnBranch.innerHTML;
+        btnBranch.innerHTML = '<span class="material-symbols-outlined text-[18px] text-secondary">done</span><span>Branch Created!</span>';
+        setTimeout(() => {
+          btnBranch.innerHTML = original;
+        }, 2000);
+      });
+    }
+  })();
+</script></main></div></body></html>
