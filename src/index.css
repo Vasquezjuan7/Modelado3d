@@ -1,0 +1,83 @@
+﻿@import "tailwindcss";
+
+@theme {
+  --color-primary-fixed: #63f7ff;
+  --color-on-secondary: #003824;
+  --color-surface-container: #1c1f28;
+  --color-surface-tint: #00dce5;
+  --color-outline: #849495;
+  --color-tertiary-fixed-dim: #d0bcff;
+  --color-surface-container-low: #181b24;
+  --color-on-surface-variant: #b9caca;
+  --color-surface-bright: #363942;
+  --color-secondary-fixed: #6ffbbe;
+  --color-on-secondary-container: #00311f;
+  --color-surface-variant: #31353e;
+  --color-on-error: #690005;
+  --color-on-tertiary-fixed: #23005c;
+  --color-tertiary-container: #e5d7ff;
+  --color-error-container: #93000a;
+  --color-surface-dim: #10131c;
+  --color-primary: #e9feff;
+  --color-tertiary-fixed: #e9ddff;
+  --color-background: #10131c;
+  --color-inverse-on-surface: #2d3039;
+  --color-on-secondary-fixed-variant: #005236;
+  --color-inverse-primary: #00696e;
+  --color-on-primary-fixed: #002021;
+  --color-inverse-surface: #e0e2ee;
+  --color-primary-container: #00f5ff;
+  --color-on-tertiary-fixed-variant: #5516be;
+  --color-outline-variant: #3a494a;
+  --color-on-surface: #e0e2ee;
+  --color-on-primary-fixed-variant: #004f53;
+  --color-on-secondary-fixed: #002113;
+  --color-tertiary: #fef8ff;
+  --color-surface: #10131c;
+  --color-error: #ffb4ab;
+  --color-surface-container-lowest: #0b0e16;
+  --color-on-tertiary-container: #703eda;
+  --color-on-primary-container: #006c71;
+  --color-surface-container-highest: #31353e;
+  --color-primary-fixed-dim: #00dce5;
+  --color-on-error-container: #ffdad6;
+  --color-on-primary: #003739;
+  --color-secondary: #4edea3;
+  --color-on-tertiary: #3c0091;
+  --color-surface-container-high: #262a33;
+  --color-secondary-fixed-dim: #4edea3;
+  --color-secondary-container: #00a572;
+  --color-on-background: #e0e2ee;
+
+  --font-headline-lg: "Space Grotesk", sans-serif;
+  --font-body-md: "Space Grotesk", sans-serif;
+  --font-title-sm: "Space Grotesk", sans-serif;
+  --font-body-lg: "Space Grotesk", sans-serif;
+  --font-mono-code: "JetBrains Mono", monospace;
+  --font-headline-lg-mobile: "Space Grotesk", sans-serif;
+  --font-display-xl-mobile: "Space Grotesk", sans-serif;
+  --font-headline-md: "Space Grotesk", sans-serif;
+  --font-telemetry-label: "JetBrains Mono", monospace;
+  --font-micro-coordinate: "JetBrains Mono", monospace;
+  --font-display-xl: "Space Grotesk", sans-serif;
+
+  --spacing-space-sm: 0.5rem;
+  --spacing-gutter-lg: 1.5rem;
+  --spacing-margin-lg: 2.5rem;
+  --spacing-gutter: 1rem;
+  --spacing-margin-md: 1.5rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-xs: 0.25rem;
+  --spacing-margin: 1rem;
+  --spacing-space-xl: 2.5rem;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+}
+::-webkit-scrollbar {
+  display: none;
+}
