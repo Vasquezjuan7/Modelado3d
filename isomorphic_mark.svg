@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" fill="none">
+  <defs>
+    <linearGradient id="cyberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4" />
+      <stop offset="50%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#EC4899" />
+    </linearGradient>
+    <linearGradient id="glowFloor" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06B6D4" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0.8" />
+    </linearGradient>
+  </defs>
+  <!-- Isometric Grid Base -->
+  <polygon points="60,10 110,38 60,66 10,38" fill="#111827" stroke="#06B6D4" stroke-width="2" stroke-opacity="0.6"/>
+  <polygon points="10,38 60,66 60,110 10,82" fill="#0B0F17" stroke="#06B6D4" stroke-width="1.5" stroke-opacity="0.4"/>
+  <polygon points="110,38 60,66 60,110 110,82" fill="#161F30" stroke="#06B6D4" stroke-width="1.5" stroke-opacity="0.4"/>
+  <!-- Isometric 3D Skyscraper representing Code / God Object -->
+  <polygon points="45,30 60,22 75,30 60,38" fill="url(#cyberGrad)"/>
+  <polygon points="45,30 60,38 60,78 45,70" fill="#0284C7"/>
+  <polygon points="75,30 60,38 60,78 75,70" fill="#0369A1"/>
+  <!-- Secondary smaller buildings (Services / Classes) -->
+  <polygon points="25,48 35,42 45,48 35,54" fill="#10B981"/>
+  <polygon points="25,48 35,54 35,74 25,68" fill="#059669"/>
+  <polygon points="45,48 35,54 35,74 45,68" fill="#047857"/>
+  
+  <polygon points="75,48 85,42 95,48 85,54" fill="#F59E0B"/>
+  <polygon points="75,48 85,54 85,74 75,68" fill="#D97706"/>
+  <polygon points="95,48 85,54 85,74 95,68" fill="#B45309"/>
+  
+  <!-- Circuit/Highway Traffic Lines -->
+  <path d="M 35,54 L 60,68 L 85,54" stroke="#06B6D4" stroke-width="2" stroke-dasharray="3,3" stroke-linecap="round"/>
+  <circle cx="60" cy="68" r="3" fill="#EC4899"/>
+</svg>
