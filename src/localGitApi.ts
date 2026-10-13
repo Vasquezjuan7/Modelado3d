@@ -1,4 +1,4 @@
-import type { FileNode } from './githubApi';
+﻿import type { FileNode } from './githubApi';
 import { computePositions } from './githubApi';
 
 // Type definitions to satisfy TypeScript since we use window.require
@@ -8,23 +8,24 @@ declare global {
   }
 }
 
-export const getExtensionColor = (ext?: string) => {
-  switch(ext) {
-    case 'ts': case 'tsx': return '#3178c6'; // TypeScript Blue
-    case 'js': case 'jsx': return '#f7df1e'; // JavaScript Yellow
-    case 'py': return '#3572A5'; // Python Blue
-    case 'java': return '#b07219'; // Java Brown/Orange
-    case 'go': return '#00ADD8'; // Go Cyan
-    case 'rs': return '#dea584'; // Rust
-    case 'html': return '#e34c26'; // HTML Orange
-    case 'css': return '#563d7c'; // CSS Purple
-    case 'json': return '#292929'; // JSON Dark
-    case 'md': return '#ffffff'; // Markdown White
-    default: return '#00ffff'; // Default Neon Cyan
+export const getExtensionColor = (ext?: string): string => {
+  switch(ext?.toLowerCase()) {
+    case 'ts': case 'tsx': return '#00dce5'; // Cyan
+    case 'js': case 'jsx': return '#f59e0b'; // Amber
+    case 'py': return '#3b82f6'; // Python Blue
+    case 'java': return '#ea580c'; // Java Orange
+    case 'go': return '#06b6d4'; // Go Teal
+    case 'rs': return '#f97316'; // Rust Orange
+    case 'html': return '#ef4444'; // HTML Red
+    case 'css': return '#a855f7'; // CSS Purple
+    case 'json': return '#64748b'; // Slate
+    case 'sql': return '#10b981'; // Emerald
+    case 'md': return '#94a3b8'; // Light Slate
+    default: return '#38bdf8'; // Sky Blue
   }
 };
 
-function getExtension(filename: string) {
+function getExtension(filename: string): string {
   const parts = filename.split('.');
   return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
 }
@@ -34,7 +35,6 @@ export async function cloneRepo(url: string, destPath: string, onProgress?: (msg
   const fs = window.require('fs');
 
   return new Promise((resolve, reject) => {
-    // If it exists, remove it first (for simplicity in prototyping)
     if (fs.existsSync(destPath)) {
       onProgress?.('Cleaning up old repository...');
       try {
@@ -46,7 +46,7 @@ export async function cloneRepo(url: string, destPath: string, onProgress?: (msg
 
     onProgress?.(`Cloning ${url} ...`);
     
-    exec(`git clone --depth 1 ${url} "${destPath}"`, (error: any, stdout: string, stderr: string) => {
+    exec(`git clone --depth 1 ${url} "${destPath}"`, (error: any, _stdout: string, stderr: string) => {
       if (error) {
         console.error('Clone error:', stderr);
         reject(new Error(`Git clone failed: ${stderr || error.message}`));
@@ -58,7 +58,7 @@ export async function cloneRepo(url: string, destPath: string, onProgress?: (msg
   });
 }
 
-export async function parseLocalRepo(rootDir: string): Promise<{ root: FileNode, flatNodes: Map<string, FileNode> }> {
+export async function parseLocalRepo(rootDir: string): Promise<{ root: FileNode; flatNodes: Map<string, FileNode> }> {
   const fs = window.require('fs');
   const path = window.require('path');
   const flatNodes = new Map<string, FileNode>();
@@ -66,15 +66,15 @@ export async function parseLocalRepo(rootDir: string): Promise<{ root: FileNode,
   function walkDir(currentPath: string, parentPathStr: string): FileNode | null {
     const name = path.basename(currentPath);
     
-    // Ignore .git folder to save massive amounts of parsing
-    if (name === '.git' || name === 'node_modules') return null;
+    // Ignore .git and node_modules folders
+    if (name === '.git' || name === 'node_modules' || name === 'dist' || name === 'build') return null;
 
     const stats = fs.statSync(currentPath);
     const isDir = stats.isDirectory();
     const relativePath = parentPathStr ? `${parentPathStr}/${name}` : name;
 
     const node: FileNode = {
-      id: currentPath, // Use absolute path as ID so we can read/write it later
+      id: currentPath,
       name: name,
       type: isDir ? 'tree' : 'blob',
       path: relativePath,
@@ -99,10 +99,9 @@ export async function parseLocalRepo(rootDir: string): Promise<{ root: FileNode,
   }
 
   const rootNode = walkDir(rootDir, '')!;
-  rootNode.name = path.basename(rootDir); // Ensure root has a name
+  rootNode.name = path.basename(rootDir);
 
-  // Compute 3D positions
-  computePositions(rootNode, [0, 0, 0], 2);
+  computePositions(rootNode);
 
   return { root: rootNode, flatNodes };
 }

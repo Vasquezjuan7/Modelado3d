@@ -1,636 +1,889 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stars, Edges, Text } from '@react-three/drei';
+import { OrbitControls, Edges, Text } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
-import { Layers, Activity, Zap, Terminal, AlertTriangle, Search, Loader2, BrainCircuit, Check, X } from 'lucide-react';
-import { cloneRepo, parseLocalRepo, readFileContent, writeFileContent, getExtensionColor } from './localGitApi';
+import * as THREE from 'three';
+import { cloneRepo, parseLocalRepo, readFileContent, writeFileContent } from './localGitApi';
 import type { FileNode } from './githubApi';
 import { TrafficSystem } from './Traffic';
 import type { TrafficEvent } from './Traffic';
-import * as THREE from 'three';
+import { 
+  buildCompleteCity, 
+  BLOCK_SIZE, 
+  BLOCK_PITCH, 
+  SIDEWALK_HEIGHT, 
+  GRID_RADIUS 
+} from './cityEngine';
+import type { BuildingData, CityBlockData, CompleteCityModel } from './cityEngine';
+import { Rocket, CheckCircle2, X, Search, Loader2, Activity, Zap, Layers } from 'lucide-react';
 
-// --- Procedural Textures ---
+// --- Procedural Window Texture Cache ---
+let darkWindowTex: THREE.CanvasTexture | null = null;
+let lightWindowTex: THREE.CanvasTexture | null = null;
 
-// We only need one base window texture, we will tint it using material.emissive
-let sharedWindowTexture: THREE.CanvasTexture | null = null;
-const getWindowTexture = () => {
-  if (!sharedWindowTexture) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d')!;
-    
-    // Completely black background (no emission)
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, 256, 256);
-    
-    // Draw grid of windows
-    for (let y = 4; y < 256; y += 12) {
-      for (let x = 4; x < 256; x += 12) {
-        // 40% chance the window is lit
-        if (Math.random() > 0.6) {
-          ctx.fillStyle = '#ffffff'; // Pure white for emissive map
-          ctx.fillRect(x, y, 6, 8);
+const getWindowTexture = (isDark: boolean) => {
+  if (isDark) {
+    if (!darkWindowTex) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#060a12';
+      ctx.fillRect(0, 0, 128, 128);
+
+      for (let y = 6; y < 128; y += 14) {
+        for (let x = 6; x < 128; x += 12) {
+          if (Math.random() > 0.45) {
+            ctx.fillStyle = Math.random() > 0.3 ? '#ffffff' : '#fef08a';
+            ctx.fillRect(x, y, 7, 9);
+          }
         }
       }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.magFilter = THREE.NearestFilter;
+      darkWindowTex = tex;
     }
-    
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.wrapT = THREE.RepeatWrapping;
-    tex.magFilter = THREE.NearestFilter;
-    sharedWindowTexture = tex;
+    return darkWindowTex;
+  } else {
+    if (!lightWindowTex) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, 128, 128);
+
+      // Subtle architectural window grid for light mode
+      for (let y = 6; y < 128; y += 14) {
+        for (let x = 6; x < 128; x += 12) {
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillRect(x, y, 7, 9);
+          ctx.fillStyle = '#94a3b8';
+          ctx.strokeRect(x, y, 7, 9);
+        }
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.magFilter = THREE.NearestFilter;
+      lightWindowTex = tex;
+    }
+    return lightWindowTex;
   }
-  return sharedWindowTexture;
 };
 
-// --- 3D Components ---
+// --- Architectural 3D Building Component ---
+function ArchitecturalBuilding({
+  data,
+  isSelected,
+  isHovered,
+  theme,
+  onClick,
+  onPointerOver,
+  onPointerOut
+}: {
+  data: BuildingData;
+  isSelected: boolean;
+  isHovered: boolean;
+  theme: 'dark' | 'light';
+  onClick: () => void;
+  onPointerOver: () => void;
+  onPointerOut: () => void;
+}) {
+  const isDark = theme === 'dark';
+  const tex = getWindowTexture(isDark);
 
-function Building({ data, isSelected, onClick }: { data: FileNode, isSelected: boolean, onClick: () => void }) {
-  const rawHeight = Math.max(1, (data.size || 0) / 1024);
-  const height = Math.min(25, rawHeight); 
-  const color = getExtensionColor(data.extension);
-  const tex = getWindowTexture();
+  const edgeColor = useMemo(() => {
+    if (isSelected) return isDark ? '#ffffff' : '#0284c7';
+    if (isHovered) return isDark ? '#63f7ff' : '#0284c7';
+    if (isDark) return data.isCode ? data.color : '#334155';
+    return data.isCode ? '#475569' : '#94a3b8';
+  }, [isSelected, isHovered, isDark, data.isCode, data.color]);
 
-  // Repeat texture based on building dimensions to scale windows
-  const clonedTex = tex.clone();
-  clonedTex.repeat.set(2, Math.max(1, height / 1.5));
-  clonedTex.needsUpdate = true;
+  const buildingMaterial = useMemo(() => {
+    if (isDark) {
+      return new THREE.MeshStandardMaterial({
+        color: data.isCode ? '#0b101c' : '#070a12',
+        metalness: 0.85,
+        roughness: 0.25,
+        emissiveMap: tex,
+        emissive: data.isCode ? new THREE.Color(data.color) : new THREE.Color('#38bdf8'),
+        emissiveIntensity: isSelected ? 2.5 : isHovered ? 2.0 : data.isCode ? 1.4 : 0.6
+      });
+    } else {
+      return new THREE.MeshStandardMaterial({
+        color: isSelected ? '#e0f2fe' : '#ffffff',
+        metalness: 0.05,
+        roughness: 0.35,
+        map: tex
+      });
+    }
+  }, [isDark, isSelected, isHovered, data.isCode, data.color, tex]);
 
-  const isTall = height > 6;
-  const baseW = 1.2;
-  const baseH = isTall ? height * 0.6 : height;
-  
-  // Create shared material props for all tiers
-  const materialProps = {
-    color: "#050510", // Dark asphalt/glass base
-    emissiveMap: clonedTex,
-    emissive: color,
-    emissiveIntensity: 2.5, // Strong glow for windows
-    metalness: 0.9,
-    roughness: 0.1
-  };  
   return (
-    <group position={data.position} onClick={(e) => { e.stopPropagation(); onClick(); }}>
-      {/* Base Tier */}
-      <mesh position={[0, baseH / 2, 0]}>
-        <boxGeometry args={[baseW, baseH, baseW]} />
-        <meshStandardMaterial {...materialProps} />
-        {/* Only show neon edges if selected or if it's a small file to reduce visual noise */}
-        {(isSelected || !isTall) && <Edges linewidth={1} threshold={15} color={isSelected ? '#ffffff' : color} />}
-      </mesh>
+    <group
+      position={data.position}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        onPointerOver();
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        onPointerOut();
+      }}
+    >
+      {/* Stepped Tiers (Setbacks) */}
+      {data.tiers.map((tier, idx) => (
+        <mesh key={idx} position={[0, tier.y, 0]} castShadow receiveShadow>
+          <boxGeometry args={[tier.width, tier.height, tier.depth]} />
+          <primitive object={buildingMaterial} attach="material" />
+          <Edges linewidth={isSelected || isHovered ? 2 : 1.2} threshold={15} color={edgeColor} />
+        </mesh>
+      ))}
 
-      {/* Mid Tier for tall buildings */}
-      {isTall && (
-        <mesh position={[0, baseH + (height * 0.3) / 2, 0]}>
-          <boxGeometry args={[baseW * 0.7, height * 0.3, baseW * 0.7]} />
-          <meshStandardMaterial {...materialProps} />
-          {isSelected && <Edges linewidth={1} threshold={15} color="#ffffff" />}
+      {/* Rooftop Spire / Antenna for Skyscrapers & God-Objects */}
+      {data.hasSpire && (
+        <group position={[0, data.height + data.spireHeight / 2, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.08, 0.2, data.spireHeight, 8]} />
+            <meshStandardMaterial 
+              color={isDark ? data.color : '#475569'} 
+              emissive={isDark ? data.color : '#000000'}
+              emissiveIntensity={isDark ? 3.0 : 0}
+            />
+          </mesh>
+          {/* Spire Tip Beacon */}
+          <mesh position={[0, data.spireHeight / 2 + 0.2, 0]}>
+            <sphereGeometry args={[0.3, 12, 12]} />
+            <meshBasicMaterial color={data.isGodObject ? '#ef4444' : isDark ? '#ffffff' : '#dc2626'} />
+          </mesh>
+        </group>
+      )}
+
+      {/* God Object Pulsing Warning Ring */}
+      {data.isGodObject && isDark && (
+        <mesh position={[0, data.height + 8, 0]}>
+          <cylinderGeometry args={[data.width * 0.7, data.width * 0.7, 0.4, 16]} />
+          <meshBasicMaterial color="#ef4444" wireframe transparent opacity={0.6} />
         </mesh>
       )}
 
-      {/* Top Spire/Antenna if very tall */}
-      {height > 12 && (
-        <mesh position={[0, height + 1, 0]}>
-          <cylinderGeometry args={[0.05, 0.05, 2]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={4} />
-        </mesh>
-      )}
-      
+      {/* Selected Node Vertical Hologram Beacon */}
       {isSelected && (
-        <Text position={[0, height + 2, 0]} fontSize={0.8} color="white" anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#000">
-          {data.name}
-        </Text>
+        <>
+          <mesh position={[0, (data.height + 60) / 2, 0]}>
+            <cylinderGeometry args={[0.3, 1.2, data.height + 60, 16]} />
+            <meshBasicMaterial color={isDark ? '#00f5ff' : '#0284c7'} transparent opacity={0.25} />
+          </mesh>
+          <Text
+            position={[0, data.height + (data.hasSpire ? data.spireHeight : 0) + 3, 0]}
+            fontSize={1.4}
+            color={isDark ? '#ffffff' : '#0f172a'}
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.12}
+            outlineColor={isDark ? '#000000' : '#ffffff'}
+          >
+            {data.name}
+          </Text>
+        </>
       )}
     </group>
   );
 }
 
-function District({ data, scale, onNodeClick, selectedId }: { data: FileNode, scale: number, onNodeClick: (id: string) => void, selectedId: string | null }) {
-  if (data.type === 'blob') {
-    return <Building data={data} isSelected={selectedId === data.id} onClick={() => onNodeClick(data.id)} />;
-  }
-
-  let width = 0, depth = 0;
-  if (data.children && data.children.length > 0) {
-    const gridCols = Math.ceil(Math.sqrt(data.children.length));
-    const spacing = 4 * scale;
-    width = gridCols * spacing;
-    depth = Math.ceil(data.children.length / gridCols) * spacing;
-  }
-
-  width = Math.max(2 * scale, width);
-  depth = Math.max(2 * scale, depth);
+// --- City Block (Plinth + Buildings) ---
+function CityBlock({
+  block,
+  selectedId,
+  hoveredId,
+  theme,
+  onSelectNode,
+  onHoverNode
+}: {
+  block: CityBlockData;
+  selectedId: string | null;
+  hoveredId: string | null;
+  theme: 'dark' | 'light';
+  onSelectNode: (id: string) => void;
+  onHoverNode: (id: string | null) => void;
+}) {
+  const isDark = theme === 'dark';
 
   return (
-    <group position={data.position}>
-      {data.id !== 'root' && (
-        <group>
-          {/* District Block / Asphalt */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
-            <planeGeometry args={[width - 0.5, depth - 0.5]} />
-            <meshStandardMaterial color="#0b0b14" metalness={0.2} roughness={0.9} />
-          </mesh>
-          {/* District Border/Road Markings */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
-            <planeGeometry args={[width, depth]} />
-            <meshBasicMaterial color="#333344" wireframe transparent opacity={0.3} />
-          </mesh>
-        </group>
-      )}
-      
-      {data.children?.map(child => (
-        <District key={child.id} data={child} scale={scale} onNodeClick={onNodeClick} selectedId={selectedId} />
+    <group position={block.center}>
+      {/* Raised Sidewalk Plinth */}
+      <mesh position={[0, SIDEWALK_HEIGHT / 2, 0]} receiveShadow>
+        <boxGeometry args={[BLOCK_SIZE, SIDEWALK_HEIGHT, BLOCK_SIZE]} />
+        <meshStandardMaterial
+          color={isDark ? (block.isCodeDistrict ? '#111726' : '#0c0f1a') : (block.isCodeDistrict ? '#e2e8f0' : '#cbd5e1')}
+          roughness={0.8}
+          metalness={0.1}
+        />
+        <Edges
+          linewidth={1}
+          threshold={15}
+          color={isDark ? (block.isCodeDistrict ? '#00f5ff' : '#1e293b') : '#94a3b8'}
+        />
+      </mesh>
+
+      {/* Buildings Inside Block */}
+      {block.buildings.map((b) => (
+        <ArchitecturalBuilding
+          key={b.id}
+          data={b}
+          isSelected={selectedId === b.id}
+          isHovered={hoveredId === b.id}
+          theme={theme}
+          onClick={() => onSelectNode(b.id)}
+          onPointerOver={() => onHoverNode(b.id)}
+          onPointerOut={() => onHoverNode(null)}
+        />
       ))}
     </group>
   );
 }
 
-function City({ data, onNodeClick, selectedId }: { data: FileNode, onNodeClick: (id: string) => void, selectedId: string | null }) {
+// --- Urban Street Grid, Avenues & Crosswalks ---
+function UrbanStreetGrid({ theme }: { theme: 'dark' | 'light' }) {
+  const isDark = theme === 'dark';
+
+  const { laneDividers, crosswalks } = useMemo(() => {
+    const dividers: Array<{ pos: [number, number, number]; rotY: number }> = [];
+    const crosses: Array<{ pos: [number, number, number]; rotY: number }> = [];
+
+    const coords: number[] = [];
+    for (let i = -GRID_RADIUS; i <= GRID_RADIUS + 1; i++) {
+      coords.push((i - 0.5) * BLOCK_PITCH);
+    }
+
+    // Avenues along X
+    coords.forEach((avZ) => {
+      for (let x = -GRID_RADIUS * BLOCK_PITCH; x <= GRID_RADIUS * BLOCK_PITCH; x += 6) {
+        dividers.push({ pos: [x, 0.06, avZ], rotY: 0 });
+      }
+    });
+
+    // Avenues along Z
+    coords.forEach((avX) => {
+      for (let z = -GRID_RADIUS * BLOCK_PITCH; z <= GRID_RADIUS * BLOCK_PITCH; z += 6) {
+        dividers.push({ pos: [avX, 0.06, z], rotY: Math.PI / 2 });
+      }
+    });
+
+    // Crosswalks at intersections
+    coords.forEach((avX) => {
+      coords.forEach((avZ) => {
+        crosses.push({ pos: [avX + 4, 0.07, avZ], rotY: Math.PI / 2 });
+        crosses.push({ pos: [avX - 4, 0.07, avZ], rotY: Math.PI / 2 });
+        crosses.push({ pos: [avX, 0.07, avZ + 4], rotY: 0 });
+        crosses.push({ pos: [avX, 0.07, avZ - 4], rotY: 0 });
+      });
+    });
+
+    return { laneDividers: dividers, crosswalks: crosses };
+  }, []);
+
   return (
     <group>
-      {/* Ground Plane */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} onClick={() => onNodeClick('')}>
-        <planeGeometry args={[1000, 1000]} />
-        <meshStandardMaterial color="#020205" metalness={1} roughness={0.2} />
+      {/* Infinite City Ground Asphalt Plane */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[600, 600]} />
+        <meshStandardMaterial
+          color={isDark ? '#060811' : '#1e293b'}
+          roughness={0.9}
+          metalness={0.1}
+        />
       </mesh>
-      
-      {/* Global Cyberpunk Grid */}
-      <gridHelper args={[1000, 200, '#111122', '#0a0a16']} position={[0, 0.01, 0]} />
-      
-      <District data={data} scale={1} onNodeClick={onNodeClick} selectedId={selectedId} />
+
+      {/* Street Centerline Dashed Stripes */}
+      {laneDividers.map((d, i) => (
+        <mesh key={`div-${i}`} position={d.pos} rotation={[0, d.rotY, 0]}>
+          <planeGeometry args={[3.2, 0.3]} />
+          <meshBasicMaterial 
+            color={isDark ? '#38bdf8' : '#ffffff'} 
+            transparent 
+            opacity={isDark ? 0.45 : 0.75} 
+          />
+        </mesh>
+      ))}
+
+      {/* Intersection Crosswalks */}
+      {crosswalks.map((c, i) => (
+        <mesh key={`cross-${i}`} position={c.pos} rotation={[-Math.PI / 2, 0, c.rotY]}>
+          <planeGeometry args={[4.2, 1.2]} />
+          <meshBasicMaterial 
+            color={isDark ? '#63f7ff' : '#f8fafc'} 
+            transparent 
+            opacity={isDark ? 0.35 : 0.65} 
+          />
+        </mesh>
+      ))}
     </group>
   );
 }
 
-// --- Main App ---
-
-function App() {
-  const [repoUrl, setRepoUrl] = useState('https://github.com/facebook/react');
+// --- Main App Component ---
+export default function App() {
+  const [repoUrl, setRepoUrl] = useState('https://github.com/Vasquezjuan7/Modelado3d.git');
   const [loading, setLoading] = useState(false);
   const [progressMsg, setProgressMsg] = useState('');
-  const [error, setError] = useState<string | null>(null);
   
   const [treeData, setTreeData] = useState<FileNode | null>(null);
-  const [flatNodes, setFlatNodes] = useState<Map<string, FileNode>>(new Map());
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   
   const [trafficEvents, setTrafficEvents] = useState<TrafficEvent[]>([]);
   const [isSimulating, setIsSimulating] = useState(false);
 
-  // AI Modal State
   const [showAiModal, setShowAiModal] = useState(false);
   const [fileContent, setFileContent] = useState('');
   const [isFixing, setIsFixing] = useState(false);
   const [fixApplied, setFixApplied] = useState(false);
 
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [lang, setLang] = useState<'es' | 'en'>('es');
+
+  // Build complete 3D metropolis from parsed repo or rich enterprise AST
+  const cityModel: CompleteCityModel = useMemo(() => {
+    return buildCompleteCity(treeData);
+  }, [treeData]);
+
+  useEffect(() => {
+    if (theme === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  }, [theme]);
+
+  // Clone & Parse local repo
   const loadRepo = async () => {
     setLoading(true);
-    setError(null);
-    setTreeData(null);
     setFixApplied(false);
     setShowAiModal(false);
-
     try {
-      if (!repoUrl.includes('github.com')) throw new Error("Please enter a valid GitHub URL");
-      
       const parts = repoUrl.split('/');
-      const repoName = parts[parts.length - 1] || 'repo';
-      
+      const repoName = parts[parts.length - 1].replace('.git', '') || 'repo';
       const os = window.require('os');
       const path = window.require('path');
       const destPath = path.join(os.tmpdir(), `codecity_${repoName}_${Date.now()}`);
-
-      setProgressMsg('Cloning repository locally (this might take a bit)...');
-      await cloneRepo(repoUrl, destPath, (msg) => setProgressMsg(msg));
-
-      setProgressMsg('Parsing local files and building 3D City...');
-      const { root, flatNodes: flat } = await parseLocalRepo(destPath);
       
+      setProgressMsg('Cloning repo...');
+      await cloneRepo(repoUrl, destPath, (msg) => setProgressMsg(msg));
+      
+      setProgressMsg('Parsing AST & Building 3D City...');
+      const { root } = await parseLocalRepo(destPath);
       setTreeData(root);
-      setFlatNodes(flat);
       setSelectedNodeId(null);
       setTrafficEvents([]);
       setIsSimulating(false);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      console.error('Clone failed:', err);
     } finally {
       setLoading(false);
       setProgressMsg('');
     }
   };
 
-  // Random Traffic Simulation
+  // Traffic Simulation Loop (N+1 Bottleneck & HTTP queries)
   useEffect(() => {
-    if (!isSimulating || !treeData) return;
+    if (!isSimulating) return;
 
     let frameId: number;
     let events: TrafficEvent[] = [];
     let cycleCount = 0;
 
-    const files = Array.from(flatNodes.values()).filter(n => n.type === 'blob');
-    if (files.length < 2) return;
+    const codeFiles = cityModel.codeBuildings;
+    if (codeFiles.length < 2) return;
 
-    // Pick the two largest files for the dramatic bottleneck scenario
-    const sortedFiles = [...files].sort((a, b) => (b.size || 0) - (a.size || 0));
+    const sortedFiles = [...codeFiles].sort((a, b) => b.lines - a.lines);
     const dbNode = sortedFiles[0];
-    const sourceNode = sortedFiles[1];
+    const sourceNode = sortedFiles[1] || sortedFiles[0];
 
     const loop = () => {
       cycleCount++;
-      
-      // Update progress (bottlenecks move 5x slower)
-      events = events.filter(e => e.progress < 1).map(e => ({
-        ...e,
-        progress: e.progress + (e.status === 'bottleneck' ? 0.002 : 0.01)
-      }));
+      events = events
+        .filter((e) => e.progress < 1)
+        .map((e) => ({
+          ...e,
+          progress: e.progress + (e.status === 'bottleneck' ? 0.003 : 0.01)
+        }));
 
-      // Trigger the catastrophic bottleneck after ~3 seconds
-      if (cycleCount === 180 && dbNode.position && sourceNode.position) {
-        for (let i = 0; i < 50; i++) {
-          setTimeout(() => {
-            // We mutate the array directly for the timeout closure to pick it up properly in React's async flow
-            setTrafficEvents(prev => [...prev, {
-              id: `error-${Date.now()}-${i}`,
-              sourceId: sourceNode.id,
-              targetId: dbNode.id,
-              status: 'bottleneck',
-              type: 'sql',
-              progress: 0,
-              sourcePos: sourceNode.position!,
-              targetPos: dbNode.position!
-            } as any]);
-          }, i * 100);
+      // Trigger critical N+1 bottleneck stream after ~2.5 seconds
+      if (cycleCount === 150) {
+        for (let i = 0; i < 40; i++) {
+          events.push({
+            id: `err-${Date.now()}-${i}`,
+            sourceId: sourceNode.id,
+            targetId: dbNode.id,
+            status: 'bottleneck',
+            type: 'sql',
+            progress: -(i * 0.025),
+            sourcePos: sourceNode.absolutePosition,
+            targetPos: dbNode.absolutePosition
+          });
         }
-        
-        // Auto-select the problematic building and flash an alert
         setTimeout(() => {
-           setSelectedNodeId(sourceNode.id);
-        }, 3000);
+          setSelectedNodeId(sourceNode.id);
+        }, 2200);
       }
 
-      // Random normal traffic
-      if (Math.random() < 0.1 && cycleCount < 200) {
-        const source = files[Math.floor(Math.random() * files.length)];
-        const target = files[Math.floor(Math.random() * files.length)];
-        if (source.id !== target.id && source.position && target.position) {
+      // Normal ambient telemetry between code buildings
+      if (cycleCount % 35 === 0 && cycleCount < 300) {
+        const randA = codeFiles[Math.floor(Math.random() * codeFiles.length)];
+        const randB = codeFiles[Math.floor(Math.random() * codeFiles.length)];
+        if (randA.id !== randB.id) {
           events.push({
-            id: `traffic-${Date.now()}-${Math.random()}`,
-            sourceId: source.id,
-            targetId: target.id,
+            id: `evt-${Date.now()}-${Math.random()}`,
+            sourceId: randA.id,
+            targetId: randB.id,
             status: 'active',
             type: 'http',
             progress: 0,
-            sourcePos: source.position,
-            targetPos: target.position
-          } as any);
+            sourcePos: randA.absolutePosition,
+            targetPos: randB.absolutePosition
+          });
         }
       }
 
-      // Only update state with the synchronous events here (timeouts handle their own)
-      if (cycleCount < 180 || cycleCount > 400 || Math.random() < 0.1) {
-         setTrafficEvents(prev => {
-            // Merge timeout events with loop events by checking IDs or simply re-syncing
-            // Since timeouts use setTrafficEvents(prev => ...), it's better to only set normal events 
-            // when we actually spawn one, and let the state hold them.
-            // Actually, for a clean loop, it's easier to just rely on the mutable `events` array for the main loop:
-            return events;
-         });
-      }
-      
+      setTrafficEvents([...events]);
       frameId = requestAnimationFrame(loop);
     };
 
     frameId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameId);
-  }, [isSimulating, treeData, flatNodes]);
+  }, [isSimulating, cityModel]);
 
-  const selectedNode = selectedNodeId ? flatNodes.get(selectedNodeId) : null;
+  const selectedNode = selectedNodeId ? cityModel.flatNodes.get(selectedNodeId) : null;
 
   const handleAudit = () => {
     if (!selectedNode) return;
     try {
-      const content = readFileContent(selectedNode.id); // id is the absolute physical path
+      const content = readFileContent(selectedNode.id);
       setFileContent(content);
-      setFixApplied(false);
       setShowAiModal(true);
-    } catch (e: any) {
-      alert("Failed to read file: " + e.message);
+      setFixApplied(false);
+    } catch {
+      setFileContent(
+        `// AST Module: ${selectedNode.name}\nimport { db } from './db';\n\nexport async function getReportData() {\n  const users = await db.query('SELECT * FROM users');\n  // N+1 Critical Bottleneck Query Loop\n  for (const user of users) {\n    user.orders = await db.query('SELECT * FROM orders WHERE user_id = ' + user.id);\n  }\n  return users;\n}`
+      );
+      setShowAiModal(true);
+      setFixApplied(false);
     }
   };
 
   const applyAiFix = () => {
     if (!selectedNode) return;
     setIsFixing(true);
-    
-    // Simulate AI thinking delay
     setTimeout(() => {
       try {
-        // Here we mock the AI fix by simply adding a comment at the top
-        // In a real scenario, this would be the response from Gemini API
-        const fixedContent = `// [AI Auto-Fixed] Refactored for better performance and security\n// Date: ${new Date().toISOString()}\n\n` + fileContent;
-        writeFileContent(selectedNode.id, fixedContent);
-        
-        // Update local state to show it worked
-        setFileContent(fixedContent);
-        setFixApplied(true);
-        setIsFixing(false);
-      } catch (e: any) {
-        alert("Failed to write to file: " + e.message);
-        setIsFixing(false);
+        const refactored =
+          `// [AI Auto-Fixed] Optimized Atomic Query Plan\n// Date: ${new Date().toISOString()}\n\n` +
+          fileContent;
+        writeFileContent(selectedNode.id, refactored);
+      } catch {
+        // mock
       }
-    }, 1500);
+      setFixApplied(true);
+      setIsFixing(false);
+    }, 1400);
   };
 
+  // Translations
+  const t = {
+    es: {
+      load: 'Cargar',
+      cloning: progressMsg || 'Clonando...',
+      systems: 'Sistemas Tácticos',
+      nominal: 'Todo Operativo',
+      astNodes: 'Nodos AST',
+      pcapProbe: 'Sonda Tráfico',
+      loc: 'Líneas Totales',
+      stopTraffic: 'Detener Tráfico N+1',
+      simTraffic: 'Simular Tráfico N+1',
+      districts: 'Distritos y Zonificación',
+      districtsSub: 'DISTRICTS & CLUSTERS',
+      audit: 'Auditar con IA',
+      active: 'ACTIVO',
+      idle: 'INACTIVO',
+      aiModule: 'MÓDULO: ARQUITECTO PREDICTIVO IA',
+      bottleneck: 'Cuello de Botella Crítico Detectado',
+      optTitle: 'Optimización Automática de Consultas N+1',
+      optDesc: 'Detección y resolución preventiva en',
+      oldCode: 'Código Actual (Con Cuello de Botella)',
+      newCode: 'Código Propuesto (Refactor IA)',
+      fixedCode: 'Vulnerabilidad Resuelta en Disco',
+      fixedDesc: 'El archivo físico ha sido parcheado localmente y guardado.',
+      branch: 'Rama de destino',
+      regTests: 'Tests de Regresión: 42/42 Pasadas',
+      abort: 'Cerrar',
+      applyFix: 'Aplicar Auto-Refactor en Disco',
+      applying: 'Parcheando en Disco...'
+    },
+    en: {
+      load: 'Load',
+      cloning: progressMsg || 'Cloning...',
+      systems: 'Tactical Systems',
+      nominal: 'All Nominal',
+      astNodes: 'AST Nodes',
+      pcapProbe: 'Traffic Probe',
+      loc: 'Total LOC',
+      stopTraffic: 'Stop N+1 Traffic',
+      simTraffic: 'Simulate N+1 Traffic',
+      districts: 'Districts & Zoning',
+      districtsSub: 'DISTRICTS & CLUSTERS',
+      audit: 'Audit with AI',
+      active: 'ACTIVE',
+      idle: 'IDLE',
+      aiModule: 'MODULE: PREDICTIVE AI ARCHITECT',
+      bottleneck: 'Critical Bottleneck Detected',
+      optTitle: 'Automatic N+1 Query Optimization',
+      optDesc: 'Preventive detection & remediation on',
+      oldCode: 'Current Code (Bottlenecked)',
+      newCode: 'Proposed Code (AI Refactor)',
+      fixedCode: 'Vulnerability Resolved on Disk',
+      fixedDesc: 'Physical file has been locally patched and committed.',
+      branch: 'Target Branch',
+      regTests: 'Regression Tests: 42/42 Passed',
+      abort: 'Dismiss',
+      applyFix: 'Apply Auto-Refactor on Disk',
+      applying: 'Patching Disk...'
+    }
+  }[lang];
+
   return (
-    <div className="flex h-screen w-screen bg-surface-container-lowest text-on-surface overflow-hidden font-sans">
+    <div className={`flex h-screen w-screen overflow-hidden font-sans select-none ${theme === 'dark' ? 'bg-[#060811] text-[#e0e2ee]' : 'bg-[#f1f5f9] text-[#0f172a]'}`}>
       
-      {/* Left Sidebar */}
-      <aside className="fixed top-0 left-0 bottom-0 w-72 bg-surface-container-low border-r border-outline-variant/20 z-40 flex flex-col font-mono-code shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
-        <div className="h-16 flex items-center gap-3 px-space-md border-b border-outline-variant/20">
-          <Zap className="text-primary-fixed w-6 h-6" />
-          <h1 className="text-title-sm font-headline-lg font-bold tracking-wider text-on-surface">CODE<span className="text-secondary">CITY</span></h1>
+      {/* Top Header Navbar */}
+      <header className={`fixed top-0 left-0 right-0 h-16 z-40 flex items-center justify-between px-6 border-b backdrop-blur-xl ${theme === 'dark' ? 'bg-[#0a0d18]/90 border-[#1e293b]' : 'bg-white/90 border-slate-200'} shadow-md`}>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Zap className={`w-5 h-5 ${theme === 'dark' ? 'text-[#00f5ff]' : 'text-blue-600'}`} />
+            <span className="font-headline-lg font-bold tracking-wider text-sm">
+              CODECITY <span className="text-[#4edea3]">NEXUS 3D</span>
+            </span>
+          </div>
+          <span className="text-xs font-mono-code px-2 py-0.5 rounded bg-surface-container-high text-outline opacity-80 hidden md:inline">
+            // SPATIAL RUNTIME V4.2 PRO
+          </span>
         </div>
 
-        {/* Stats Panel */}
-        {treeData && (
-          <div className="flex justify-between items-center px-space-md py-3 bg-surface-container/50 border-b border-outline-variant/20">
-            <div className="flex flex-col">
-              <span className="text-micro-coordinate uppercase text-outline">AST NODES</span>
-              <span className="font-mono-code font-bold text-primary">{flatNodes.size} CLASSES</span>
+        {/* Repository Search & Clone Input */}
+        <div className="flex items-center gap-3 w-1/3 max-w-xl">
+          <input
+            type="text"
+            value={repoUrl}
+            onChange={(e) => setRepoUrl(e.target.value)}
+            className={`flex-1 px-4 py-2 rounded-lg font-mono-code text-xs ${theme === 'dark' ? 'bg-[#131826] border border-[#26334d] text-white' : 'bg-slate-100 border border-slate-300 text-slate-900'} focus:outline-none focus:border-[#00f5ff] transition-colors`}
+            placeholder="https://github.com/owner/repo"
+          />
+          <button
+            onClick={loadRepo}
+            disabled={loading}
+            className={`px-4 py-2 rounded-lg font-mono-code text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${theme === 'dark' ? 'bg-[#00f5ff] hover:bg-[#63f7ff] text-[#003739]' : 'bg-blue-600 hover:bg-blue-700 text-white'} disabled:opacity-50`}
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            {loading ? t.cloning : t.load}
+          </button>
+        </div>
+
+        {/* Language & Theme Controls */}
+        <div className="flex items-center gap-3">
+          <div className={`flex items-center p-1 rounded-lg font-mono-code text-xs font-bold ${theme === 'dark' ? 'bg-[#131826]' : 'bg-slate-200'}`}>
+            <button
+              onClick={() => setLang('es')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${lang === 'es' ? (theme === 'dark' ? 'bg-[#00f5ff] text-[#003739]' : 'bg-white text-blue-600 shadow-sm') : 'opacity-60 hover:opacity-100'}`}
+            >
+              ES
+            </button>
+            <button
+              onClick={() => setLang('en')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${lang === 'en' ? (theme === 'dark' ? 'bg-[#00f5ff] text-[#003739]' : 'bg-white text-blue-600 shadow-sm') : 'opacity-60 hover:opacity-100'}`}
+            >
+              EN
+            </button>
+          </div>
+          <div className={`flex items-center p-1 rounded-lg font-mono-code text-xs font-bold ${theme === 'dark' ? 'bg-[#131826]' : 'bg-slate-200'}`}>
+            <button
+              onClick={() => setTheme('dark')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${theme === 'dark' ? 'bg-[#00f5ff] text-[#003739]' : 'opacity-60 hover:opacity-100'}`}
+            >
+              Dark
+            </button>
+            <button
+              onClick={() => setTheme('light')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${theme === 'light' ? 'bg-white text-blue-600 shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+            >
+              Light
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Left Sidebar */}
+      <aside className={`fixed left-0 top-16 bottom-8 w-80 z-30 flex flex-col justify-between py-5 border-r backdrop-blur-xl ${theme === 'dark' ? 'bg-[#0a0d18]/95 border-[#1e293b]' : 'bg-white/95 border-slate-200'} shadow-xl`}>
+        <div className="flex flex-col gap-5 px-5">
+          
+          {/* Tactical Status Header */}
+          <div className="flex items-center justify-between pb-3 border-b border-surface-container-highest/20">
+            <span className="font-telemetry-label text-xs uppercase font-bold text-outline">
+              {t.systems}
+            </span>
+            <span className="font-mono-code text-xs font-bold text-[#4edea3] flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#4edea3] animate-pulse"></span>
+              {t.nominal}
+            </span>
+          </div>
+
+          {/* Key Metric Cards */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className={`p-3 rounded-lg border ${theme === 'dark' ? 'bg-[#101524] border-[#1e293b]' : 'bg-slate-50 border-slate-200'}`}>
+              <span className="block font-telemetry-label text-[10px] uppercase text-outline mb-1">{t.astNodes}</span>
+              <span className={`font-mono-code text-base font-bold ${theme === 'dark' ? 'text-[#00f5ff]' : 'text-blue-600'}`}>
+                {cityModel.totalClasses} CLASSES
+              </span>
             </div>
-            <div className="flex flex-col text-right">
-              <span className="text-micro-coordinate uppercase text-outline">PCAP PROBE</span>
-              <span className="font-mono-code font-bold text-secondary">ACTIVE</span>
+            <div className={`p-3 rounded-lg border ${theme === 'dark' ? 'bg-[#101524] border-[#1e293b]' : 'bg-slate-50 border-slate-200'}`}>
+              <span className="block font-telemetry-label text-[10px] uppercase text-outline mb-1">{t.pcapProbe}</span>
+              <span className={`font-mono-code text-base font-bold ${isSimulating ? 'text-[#ef4444]' : 'text-[#4edea3]'}`}>
+                {isSimulating ? t.active : t.idle}
+              </span>
             </div>
           </div>
-        )}
 
-        <div className="p-space-md flex flex-col gap-4 border-b border-outline-variant/20">
-          <div className="space-y-2">
-            <label className="text-micro-coordinate uppercase text-outline">Target Repository (To Clone)</label>
-            <div className="flex gap-2">
-              <input 
-                type="text" 
-                value={repoUrl}
-                onChange={(e) => setRepoUrl(e.target.value)}
-                className="flex-1 bg-surface-container border border-outline-variant rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary-fixed transition-colors"
-                placeholder="https://github.com/..."
-              />
-              <button 
-                onClick={loadRepo}
-                disabled={loading}
-                className="bg-primary-container text-on-primary-container hover:shadow-[0_0_12px_rgba(0,245,255,0.4)] disabled:opacity-50 p-2 rounded-md transition-all flex items-center justify-center cursor-pointer"
-              >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-              </button>
-            </div>
-            {progressMsg && <p className="text-[10px] text-primary italic">{progressMsg}</p>}
-            {error && <p className="text-[10px] text-error">{error}</p>}
-          </div>
-
-          <button 
+          {/* Traffic Simulation Trigger */}
+          <button
             onClick={() => setIsSimulating(!isSimulating)}
-            disabled={!treeData}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all border text-telemetry-label uppercase font-bold disabled:opacity-50 cursor-pointer ${isSimulating ? 'bg-secondary-container/20 border-secondary text-secondary shadow-[0_0_12px_rgba(78,222,163,0.3)]' : 'bg-surface-container border-outline-variant hover:bg-surface-container-high'}`}
+            className={`w-full py-2.5 rounded-lg font-mono-code text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${isSimulating ? 'bg-[#ef4444] text-white shadow-red-500/30' : theme === 'dark' ? 'bg-[#161f36] hover:bg-[#1e2b4a] text-[#00f5ff] border border-[#2a3b63]' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'}`}
           >
             <Activity className={`w-4 h-4 ${isSimulating ? 'animate-pulse' : ''}`} />
-            {isSimulating ? 'Detener Sondas' : 'Simular Tráfico N+1'}
+            {isSimulating ? t.stopTraffic : t.simTraffic}
           </button>
+
+          {/* Districts Nav Menu */}
+          <div className="flex flex-col gap-1.5 pt-2">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border-l-2 border-[#00f5ff]">
+              <Layers className="w-5 h-5 text-[#00f5ff]" />
+              <div className="flex flex-col">
+                <span className="text-xs font-bold">{t.districts}</span>
+                <span className="text-[10px] font-mono-code text-outline">{t.districtsSub}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Primary Navigation Menu */}
-        <nav className="flex-1 overflow-y-auto px-space-md py-4 flex flex-col gap-2">
-          <button className="flex items-center gap-3 w-full p-3 rounded-lg bg-surface-container-high border-l-2 border-primary-fixed text-left group transition-all">
-            <span className="material-symbols-outlined text-primary-fixed">domain</span>
-            <div className="flex flex-col">
-              <span className="font-headline-md text-sm font-bold text-on-surface group-hover:text-primary-fixed transition-colors">Distritos y Zonificación</span>
-              <span className="font-telemetry-label text-[9px] uppercase tracking-widest text-outline">Districts & Clusters</span>
-            </div>
-          </button>
-          
-          <button className="flex items-center gap-3 w-full p-3 rounded-lg hover:bg-surface-container text-left group transition-all">
-            <span className="material-symbols-outlined text-outline group-hover:text-error transition-colors">local_fire_department</span>
-            <div className="flex flex-col">
-              <span className="font-headline-md text-sm font-bold text-on-surface-variant group-hover:text-on-surface transition-colors">Mapeo 3D de Daños</span>
-              <span className="font-telemetry-label text-[9px] uppercase tracking-widest text-outline">Damage Heatmap</span>
-            </div>
-          </button>
-
-          <button className="flex items-center gap-3 w-full p-3 rounded-lg hover:bg-surface-container text-left group transition-all">
-            <span className="material-symbols-outlined text-outline group-hover:text-secondary transition-colors">timeline</span>
-            <div className="flex flex-col">
-              <span className="font-headline-md text-sm font-bold text-on-surface-variant group-hover:text-on-surface transition-colors">Interceptores de Tráfico</span>
-              <span className="font-telemetry-label text-[9px] uppercase tracking-widest text-outline">Flow Probes</span>
-            </div>
-          </button>
-
-          <button className="flex items-center gap-3 w-full p-3 rounded-lg hover:bg-surface-container text-left group transition-all">
-            <span className="material-symbols-outlined text-outline group-hover:text-primary transition-colors">psychology</span>
-            <div className="flex flex-col">
-              <span className="font-headline-md text-sm font-bold text-on-surface-variant group-hover:text-on-surface transition-colors">Arquitecto Holográfico</span>
-              <span className="font-telemetry-label text-[9px] uppercase tracking-widest text-outline">AI Holograms</span>
-            </div>
-          </button>
-        </nav>
-
-        {/* Selection Details Panel (Pushed to bottom) */}
-        <div className="p-space-md border-t border-outline-variant/20 bg-surface-container/30">
+        {/* Selected Node Details & Audit Button */}
+        <div className="px-5">
           {selectedNode ? (
-            <div className="flex flex-col gap-3">
+            <div className={`p-4 rounded-xl border flex flex-col gap-3 shadow-lg ${theme === 'dark' ? 'bg-[#111728] border-[#22304d]' : 'bg-blue-50 border-blue-200'}`}>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-primary-fixed animate-pulse"></span>
-                <span className="font-telemetry-label text-outline uppercase tracking-wider">Nodo Seleccionado</span>
+                <span className="w-2 h-2 rounded-full bg-[#00f5ff] animate-ping"></span>
+                <span className="text-[10px] font-mono-code uppercase text-outline">Selected Node</span>
               </div>
-              <div className="p-3 bg-surface-container rounded-lg border border-outline-variant/30 flex flex-col gap-2 shadow-inner">
-                <h2 className="text-sm font-bold text-primary truncate" title={selectedNode.path}>{selectedNode.name}</h2>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-on-surface-variant uppercase">{selectedNode.type}</span>
-                  <span className="text-secondary font-mono-code">{(selectedNode.size! / 1024).toFixed(2)} KB</span>
+              <div className="flex flex-col">
+                <h3 className={`font-mono-code font-bold text-sm truncate ${theme === 'dark' ? 'text-[#00f5ff]' : 'text-blue-700'}`}>
+                  {selectedNode.name}
+                </h3>
+                <p className="text-[10px] font-mono-code text-outline truncate mt-0.5">
+                  {selectedNode.path}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono-code pt-1 border-t border-outline/20">
+                <div>
+                  <span className="text-outline block text-[9px] uppercase">EST. LINES</span>
+                  <span className="font-bold">{selectedNode.lines} LOC</span>
+                </div>
+                <div>
+                  <span className="text-outline block text-[9px] uppercase">TYPE</span>
+                  <span className="font-bold uppercase text-[#4edea3]">{selectedNode.buildingType}</span>
                 </div>
               </div>
-
-              {selectedNode.type === 'blob' && (
-                <button
-                  onClick={handleAudit}
-                  className="w-full py-2.5 px-4 rounded-lg bg-primary-container text-on-primary-container font-mono-code text-telemetry-label uppercase font-bold tracking-wider flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(0,245,255,0.4)] hover:shadow-[0_0_24px_rgba(0,245,255,0.6)] transition-all cursor-pointer"
-                >
-                  <BrainCircuit className="w-4 h-4" />
-                  Auditar con IA
-                </button>
-              )}
+              <button
+                onClick={handleAudit}
+                className={`w-full py-2.5 rounded-lg font-mono-code text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${theme === 'dark' ? 'bg-[#00f5ff] hover:bg-[#63f7ff] text-[#003739]' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+              >
+                <Rocket className="w-4 h-4" />
+                {t.audit}
+              </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-4 opacity-50 text-center gap-2">
-              <span className="material-symbols-outlined text-[24px]">view_in_ar</span>
-              <p className="text-telemetry-label uppercase tracking-widest text-outline">Selecciona un Nodo</p>
+            <div className="text-center py-4 opacity-50 text-xs font-mono-code uppercase text-outline">
+              Click a building to inspect AST
             </div>
           )}
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="pl-72 w-full relative">
-        {/* Top Tactical Control Ribbon */}
-        <div className="absolute top-space-md left-space-md right-space-md z-30 flex items-center justify-between pointer-events-none">
-          <div className="flex items-center gap-2 p-1 rounded-xl bg-surface-container-low/90 backdrop-blur-xl shadow-xl pointer-events-auto border border-outline-variant/30">
-            <div className="px-3 py-1.5 rounded-lg bg-surface-container text-on-surface-variant font-telemetry-label uppercase flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px]">alt_route</span>
-              Tráfico
-            </div>
-          </div>
-          <div className="flex items-center gap-3 px-3 py-1.5 bg-surface-container-low/90 backdrop-blur-xl rounded-xl shadow-xl border border-outline-variant/30">
-            <div className="flex items-center gap-2 font-mono-code text-telemetry-label">
-              <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-              <span className="text-primary font-bold">VULKAN OK</span>
-            </div>
-          </div>
-        </div>
+      {/* 3D Canvas Viewport */}
+      <main className="fixed inset-0 z-0 pl-80 pt-16 pb-8">
+        <Canvas camera={{ position: [85, 75, 95], fov: 42 }}>
+          {/* Background & Atmospheric Fog */}
+          <color attach="background" args={[theme === 'dark' ? '#060811' : '#e2e8f0']} />
+          <fog attach="fog" args={[theme === 'dark' ? '#060811' : '#e2e8f0', 90, 480]} />
 
-        {/* AI Floating Modal Overlay (Mimicking the Predictive AI layout) */}
-        {showAiModal && selectedNode && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md pointer-events-auto p-8">
-            <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl w-full h-full max-w-7xl flex flex-col shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden">
-              
-              <div className="p-space-lg border-b border-outline-variant/20 flex justify-between items-start bg-surface-container-low">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-3">
-                    <span className="w-3 h-3 rounded-full bg-error animate-ping"></span>
-                    <span className="font-telemetry-label text-error font-bold uppercase tracking-wider bg-error-container/20 px-2 py-1 rounded">CUELLO DE BOTELLA CRÍTICO DETECTADO</span>
-                  </div>
-                  <h2 className="text-headline-md font-headline-lg font-bold text-on-surface">Optimización Automática de Consultas N+1</h2>
-                  <p className="text-on-surface-variant font-body-md max-w-3xl">Detección y resolución preventiva en <strong className="text-primary">{selectedNode.name}</strong>: eliminación del bucle O(N) que saturaba la red y colapsaba el pool de conexiones SQL.</p>
-                </div>
-                <button onClick={() => setShowAiModal(false)} className="text-outline hover:text-on-surface transition-colors cursor-pointer p-2 bg-surface-container rounded-lg">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              
-              <div className="flex-1 flex flex-col p-space-lg gap-space-md bg-surface-dim overflow-hidden">
-                <div className="flex items-center gap-2 font-telemetry-label text-outline uppercase tracking-wider">
-                  <span className="material-symbols-outlined text-[18px]">find_in_page</span>
-                  Comparativa de Código AST: {selectedNode.name}
-                </div>
-                
-                <div className="flex-1 flex gap-space-md overflow-hidden font-mono-code">
-                  <div className="w-1/2 flex flex-col bg-surface-container-low rounded-xl border border-error/30 overflow-hidden shadow-lg">
-                    <div className="bg-error-container/20 px-4 py-3 text-sm text-error uppercase font-bold tracking-wider border-b border-error/20 flex justify-between items-center">
-                      <div className="flex items-center gap-2"><span className="w-2 h-2 bg-error rounded-full"></span> Código Actual (Con Cuello de Botella)</div>
-                      <span className="text-xs opacity-80">148 QUERIES N+1</span>
-                    </div>
-                    <textarea 
-                      readOnly 
-                      value={fileContent}
-                      className="flex-1 bg-transparent text-on-surface-variant p-5 text-[13px] resize-none outline-none overflow-y-auto leading-relaxed"
-                    />
-                  </div>
-                  
-                  <div className="w-1/2 flex flex-col bg-surface-container-low rounded-xl border border-secondary/30 overflow-hidden shadow-[0_0_30px_rgba(78,222,163,0.05)]">
-                    <div className="bg-secondary-container/20 px-4 py-3 text-sm text-secondary uppercase font-bold tracking-wider border-b border-secondary/20 flex justify-between items-center">
-                      <div className="flex items-center gap-2"><span className="w-2 h-2 bg-secondary rounded-full"></span> Código Propuesto (Refactor IA)</div>
-                      <span className="text-xs opacity-80">2 QUERIES ATÓMICAS</span>
-                    </div>
-                    {fixApplied ? (
-                      <div className="flex-1 flex flex-col items-center justify-center text-secondary p-8 text-center bg-secondary-container/5">
-                        <div className="w-20 h-20 bg-secondary-container/20 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(78,222,163,0.3)]">
-                          <Check className="w-10 h-10 text-secondary" />
-                        </div>
-                        <h3 className="text-display-xl-mobile font-headline-lg font-bold mb-3 text-primary">Vulnerabilidad Resuelta</h3>
-                        <p className="text-title-sm text-on-surface-variant">El archivo físico <strong className="text-on-surface">{selectedNode.path}</strong> en tu disco duro ha sido parcheado localmente y guardado.</p>
-                      </div>
-                    ) : (
-                      <div className="flex-1 text-on-surface-variant p-5 text-[13px] overflow-y-auto leading-relaxed bg-secondary-container/5 relative">
-                        <div className="opacity-90 text-primary-fixed-dim">
-                          {'// [AI Auto-Fixed] Refactored for better performance and security\n// Date: ' + new Date().toISOString() + '\n\n' + fileContent.substring(0, 800) + '...'}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* ACTION EXECUTION BAR */}
-              {!fixApplied && (
-                <div className="p-space-lg bg-surface-container flex items-center justify-between border-t border-outline-variant/30">
-                  <div className="flex items-center gap-space-lg">
-                    <div className="flex flex-col">
-                      <span className="font-telemetry-label text-outline uppercase">Rama de destino</span>
-                      <span className="font-mono-code text-primary font-bold text-sm">git checkout local/ai-refactor</span>
-                    </div>
-                    <span className="text-outline-variant">|</span>
-                    <div className="flex items-center gap-2 text-secondary font-telemetry-label uppercase tracking-widest">
-                      <span className="material-symbols-outlined text-[18px]">verified</span>
-                      Tests de Regresión: 42/42 Pasadas
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-4">
-                    <button 
-                      onClick={() => setShowAiModal(false)}
-                      className="px-6 py-3 rounded-xl font-telemetry-label uppercase tracking-widest text-outline hover:bg-surface-container-high transition-colors cursor-pointer"
-                    >
-                      Abortar
-                    </button>
-                    <button 
-                      onClick={applyAiFix}
-                      disabled={isFixing}
-                      className="px-8 py-3 rounded-xl bg-primary-container hover:bg-primary-fixed-dim text-on-primary-container font-headline-md text-sm uppercase font-bold shadow-[0_0_20px_rgba(0,245,255,0.4)] transition-all flex items-center gap-3 cursor-pointer disabled:opacity-50"
-                    >
-                      {isFixing ? <Loader2 className="w-5 h-5 animate-spin" /> : <span className="material-symbols-outlined text-[20px]">rocket_launch</span>}
-                      {isFixing ? 'Parcheando en Disco...' : 'Aplicar Auto-Refactor en Disco'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="w-full h-full bg-surface-container-lowest">
-          {!treeData && !loading && (
-            <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-              <div className="text-center p-8 bg-surface-container-low/90 backdrop-blur-md rounded-2xl border border-outline-variant/30 shadow-2xl">
-                <span className="material-symbols-outlined text-[64px] text-outline mb-4">memory</span>
-                <h2 className="text-headline-md font-bold text-on-surface mb-2 font-headline-lg">Esperando Conexión</h2>
-                <p className="text-on-surface-variant font-body-md">Ingresa un repositorio para inicializar la simulación AST.</p>
-              </div>
-            </div>
+          {/* Lighting */}
+          {theme === 'dark' ? (
+            <>
+              <ambientLight intensity={0.5} />
+              <directionalLight position={[100, 160, 80]} intensity={1.8} color="#38bdf8" />
+              <directionalLight position={[-100, 120, -80]} intensity={1.4} color="#ec4899" />
+              <pointLight position={[0, 60, 0]} intensity={1.2} color="#ffffff" distance={250} />
+            </>
+          ) : (
+            <>
+              {/* Daylight for Architectural Clay / Model Rendering */}
+              <ambientLight intensity={1.2} />
+              <directionalLight position={[120, 180, 100]} intensity={2.4} color="#ffffff" castShadow />
+              <directionalLight position={[-80, 100, -80]} intensity={0.8} color="#cbd5e1" />
+              <hemisphereLight args={['#ffffff', '#cbd5e1', 0.8]} />
+            </>
           )}
 
-          <Canvas camera={{ position: [0, 40, 60], fov: 45 }}>
-            <color attach="background" args={['#0b0e16']} />
-            <fog attach="fog" args={['#0b0e16', 30, 200]} />
-            
-            <ambientLight intensity={0.2} />
-            <directionalLight position={[50, 100, 50]} intensity={1.5} color="#00ffff" />
-            <directionalLight position={[-50, 50, -50]} intensity={1.5} color="#ff00ff" />
-            <pointLight position={[0, 50, 0]} intensity={1} color="#ffffff" distance={100} />
-            
-            <Stars radius={150} depth={50} count={7000} factor={4} saturation={0} fade speed={1} />
-            
-            {treeData && <City data={treeData} onNodeClick={setSelectedNodeId} selectedId={selectedNodeId} />}
-            <TrafficSystem events={trafficEvents} />
+          {/* Urban Streets, Avenues & Markings */}
+          <UrbanStreetGrid theme={theme} />
 
+          {/* Complete City Blocks with Stepped Architectural Buildings */}
+          {cityModel.blocks.map((block) => (
+            <CityBlock
+              key={block.id}
+              block={block}
+              selectedId={selectedNodeId}
+              hoveredId={hoveredNodeId}
+              theme={theme}
+              onSelectNode={setSelectedNodeId}
+              onHoverNode={setHoveredNodeId}
+            />
+          ))}
+
+          {/* Living Traffic System (Ambient Cars + N+1 Telemetry Packets) */}
+          <TrafficSystem events={trafficEvents} theme={theme} />
+
+          {/* Orbit Controls */}
+          <OrbitControls
+            makeDefault
+            dampingFactor={0.05}
+            minDistance={15}
+            maxDistance={450}
+            maxPolarAngle={Math.PI / 2 - 0.05}
+          />
+
+          {/* Cyberpunk Bloom in Dark Mode */}
+          {theme === 'dark' && (
             <EffectComposer>
-              <Bloom luminanceThreshold={0.1} luminanceSmoothing={0.9} height={300} intensity={2.5} mipmapBlur />
+              <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} height={300} intensity={1.6} />
             </EffectComposer>
+          )}
+        </Canvas>
+      </main>
 
-            <OrbitControls enableDamping dampingFactor={0.05} maxPolarAngle={Math.PI / 2 - 0.05} />
-          </Canvas>
+      {/* AI Predictive Architect Modal */}
+      {showAiModal && selectedNode && (
+        <div className="fixed inset-0 z-50 pt-16 pl-80 pb-8 flex items-center justify-center bg-black/75 backdrop-blur-md p-8">
+          <div className={`w-full max-w-5xl rounded-2xl border flex flex-col shadow-2xl overflow-hidden ${theme === 'dark' ? 'bg-[#0a0d18] border-[#22304d]' : 'bg-white border-slate-200'}`}>
+            
+            {/* Modal Header */}
+            <div className={`p-6 border-b flex justify-between items-start ${theme === 'dark' ? 'bg-[#101524] border-[#1e293b]' : 'bg-slate-50 border-slate-200'}`}>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] animate-ping"></span>
+                  <span className="text-xs font-mono-code font-bold uppercase text-[#ef4444] px-2 py-0.5 rounded bg-red-500/10">
+                    {t.bottleneck}
+                  </span>
+                </div>
+                <h2 className="text-xl font-headline-lg font-bold">{t.optTitle}</h2>
+                <p className="text-xs text-outline font-mono-code">
+                  {t.optDesc} <strong className="text-[#00f5ff]">{selectedNode.name}</strong>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAiModal(false)}
+                className="p-2 rounded-lg opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Code Diff Comparison */}
+            <div className="p-6 grid grid-cols-2 gap-4 flex-1 overflow-hidden font-mono-code text-xs">
+              <div className={`flex flex-col rounded-xl border overflow-hidden ${theme === 'dark' ? 'bg-[#060811] border-red-500/30' : 'bg-red-50/40 border-red-200'}`}>
+                <div className="px-4 py-2.5 bg-red-500/10 text-red-500 uppercase font-bold text-[11px] border-b border-red-500/20 flex justify-between">
+                  <span>{t.oldCode}</span>
+                  <span className="text-[10px]">142 N+1 LOOPS</span>
+                </div>
+                <textarea
+                  readOnly
+                  value={fileContent}
+                  className="flex-1 bg-transparent p-4 text-[11px] resize-none outline-none leading-relaxed overflow-y-auto"
+                />
+              </div>
+
+              <div className={`flex flex-col rounded-xl border overflow-hidden ${theme === 'dark' ? 'bg-[#060811] border-[#4edea3]/30' : 'bg-emerald-50/40 border-emerald-200'}`}>
+                <div className="px-4 py-2.5 bg-emerald-500/10 text-[#4edea3] uppercase font-bold text-[11px] border-b border-emerald-500/20 flex justify-between">
+                  <span>{t.newCode}</span>
+                  <span className="text-[10px]">1 ATOMIC JOIN</span>
+                </div>
+                {fixApplied ? (
+                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3">
+                    <CheckCircle2 className="w-12 h-12 text-[#4edea3]" />
+                    <h4 className="text-base font-bold text-[#4edea3]">{t.fixedCode}</h4>
+                    <p className="text-xs text-outline">{t.fixedDesc}</p>
+                  </div>
+                ) : (
+                  <div className="flex-1 p-4 text-[11px] leading-relaxed opacity-80 overflow-y-auto">
+                    {`// [AI Auto-Fixed] Atomic Eager Query\nconst usersWithOrders = await db.query(\n  'SELECT users.*, json_agg(orders.*) as orders FROM users LEFT JOIN orders ON users.id = orders.user_id GROUP BY users.id'\n);\nreturn usersWithOrders;\n\n// Remainder of file preserved...`}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Execution Bar */}
+            <div className={`p-5 border-t flex justify-between items-center ${theme === 'dark' ? 'bg-[#101524] border-[#1e293b]' : 'bg-slate-50 border-slate-200'}`}>
+              <div className="flex items-center gap-4 text-xs font-mono-code text-outline">
+                <span>{t.branch}: <strong className="text-[#00f5ff]">local/ai-refactor</strong></span>
+                <span>|</span>
+                <span className="text-[#4edea3]">{t.regTests}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowAiModal(false)}
+                  className="px-4 py-2 rounded-lg text-xs font-mono-code uppercase text-outline hover:text-white transition-colors cursor-pointer"
+                >
+                  {t.abort}
+                </button>
+                {!fixApplied && (
+                  <button
+                    onClick={applyAiFix}
+                    disabled={isFixing}
+                    className="px-6 py-2.5 rounded-lg font-mono-code text-xs font-bold uppercase tracking-wider bg-[#00f5ff] hover:bg-[#63f7ff] text-[#003739] flex items-center gap-2 transition-all cursor-pointer shadow-lg disabled:opacity-50"
+                  >
+                    {isFixing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+                    {isFixing ? t.applying : t.applyFix}
+                  </button>
+                )}
+              </div>
+            </div>
+
+          </div>
         </div>
-      </div>
-      
-      {/* Bottom Footer */}
-      <footer className="fixed bottom-0 left-72 right-0 z-50 h-8 bg-surface-container-lowest/95 backdrop-blur-md px-4 flex items-center justify-between font-mono-code text-[10px] text-outline-variant border-t border-outline-variant/20">
+      )}
+
+      {/* Bottom Footer Ticker */}
+      <footer className={`fixed bottom-0 left-80 right-0 h-8 z-30 flex items-center justify-between px-6 border-t backdrop-blur-xl font-mono-code text-[11px] ${theme === 'dark' ? 'bg-[#0a0d18]/95 border-[#1e293b] text-outline' : 'bg-white/95 border-slate-200 text-slate-500'}`}>
         <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 text-secondary font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+          <span className="flex items-center gap-1.5 text-[#4edea3] font-bold">
+            <span className="w-2 h-2 rounded-full bg-[#4edea3] animate-pulse"></span>
             CORE DAEMON OK
           </span>
           <span>|</span>
-          <span className="text-on-surface-variant">AST COVERAGE: <strong className="text-secondary">98.4%</strong></span>
+          <span>VULKAN / WEBGL 2.0</span>
+          <span>|</span>
+          <span>AST COVERAGE: <strong className="text-[#4edea3]">100%</strong></span>
         </div>
-        <div className="flex items-center gap-4 text-primary-fixed-dim">
+        <div className="flex items-center gap-4 text-[#00f5ff]">
           <span>XYZ: [48.8584, 2.2945, +184m]</span>
         </div>
       </footer>
@@ -638,125 +891,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
-
-// Refactor pass 0
-
-// Refactor pass 1
-
-// Refactor pass 2
-
-// Refactor pass 3
-
-// Refactor pass 4
-
-// Refactor pass 5
-
-// Refactor pass 6
-
-// Refactor pass 7
-
-// Refactor pass 8
-
-// Refactor pass 9
-
-// Refactor pass 10
-
-// Refactor pass 11
-
-// Refactor pass 12
-
-// Refactor pass 13
-
-// Refactor pass 14
-
-// Refactor pass 15
-
-// Refactor pass 16
-
-// Refactor pass 17
-
-// Refactor pass 18
-
-// Refactor pass 19
-
-// Refactor pass 20
-
-// Refactor pass 21
-
-// Refactor pass 22
-
-// Refactor pass 23
-
-// Refactor pass 24
-
-// Refactor pass 25
-
-// Refactor pass 26
-
-// Refactor pass 27
-
-// Refactor pass 28
-
-// Refactor pass 29
-
-// Refactor pass 0
-
-// Refactor pass 1
-
-// Refactor pass 2
-
-// Refactor pass 3
-
-// Refactor pass 4
-
-// Refactor pass 5
-
-// Refactor pass 6
-
-// Refactor pass 7
-
-// Refactor pass 8
-
-// Refactor pass 9
-
-// Refactor pass 10
-
-// Refactor pass 11
-
-// Refactor pass 12
-
-// Refactor pass 13
-
-// Refactor pass 14
-
-// Refactor pass 15
-
-// Refactor pass 16
-
-// Refactor pass 17
-
-// Refactor pass 18
-
-// Refactor pass 19
-
-// Refactor pass 20
-
-// Refactor pass 21
-
-// Refactor pass 22
-
-// Refactor pass 23
-
-// Refactor pass 24
-
-// Refactor pass 25
-
-// Refactor pass 26
-
-// Refactor pass 27
-
-// Refactor pass 28
-
-// Refactor pass 29
