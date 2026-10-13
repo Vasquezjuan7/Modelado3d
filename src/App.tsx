@@ -11,7 +11,6 @@ import type { TrafficEvent } from './Traffic';
 import { 
   buildCompleteCity, 
   BLOCK_SIZE, 
-  BLOCK_PITCH, 
   SIDEWALK_HEIGHT 
 } from './cityEngine';
 import type { BuildingData, CityBlockData, CompleteCityModel, DistrictMeta, DistrictCategory } from './cityEngine';
@@ -42,8 +41,8 @@ const getWindowTexture = (isDark: boolean) => {
 
       for (let y = 6; y < 128; y += 14) {
         for (let x = 6; x < 128; x += 12) {
-          if (Math.random() > 0.45) {
-            ctx.fillStyle = Math.random() > 0.3 ? '#ffffff' : '#fef08a';
+          if (Math.random() > 0.4) {
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(x, y, 7, 9);
           }
         }
@@ -66,10 +65,8 @@ const getWindowTexture = (isDark: boolean) => {
 
       for (let y = 6; y < 128; y += 14) {
         for (let x = 6; x < 128; x += 12) {
-          ctx.fillStyle = '#cbd5e1';
-          ctx.fillRect(x, y, 7, 9);
           ctx.fillStyle = '#94a3b8';
-          ctx.strokeRect(x, y, 7, 9);
+          ctx.fillRect(x, y, 7, 9);
         }
       }
       const tex = new THREE.CanvasTexture(canvas);
@@ -106,24 +103,23 @@ function ArchitecturalBuilding({
   const tex = getWindowTexture(isDark);
 
   const edgeColor = useMemo(() => {
-    if (isSelected) return isDark ? '#ffffff' : '#0284c7';
-    if (isHovered) return isDark ? '#63f7ff' : '#0284c7';
+    if (isSelected) return '#ffffff';
+    if (isHovered) return '#ffffff';
     if (isDimmed) return '#1e293b';
-    if (isDark) return data.color;
-    return '#64748b';
-  }, [isSelected, isHovered, isDimmed, isDark, data.color]);
+    return data.color;
+  }, [isSelected, isHovered, isDimmed, data.color]);
 
   const buildingMaterial = useMemo(() => {
     if (isDark) {
       return new THREE.MeshStandardMaterial({
         color: isDimmed ? '#04060a' : '#090e18',
         metalness: 0.85,
-        roughness: 0.25,
+        roughness: 0.2,
         emissiveMap: tex,
         emissive: new THREE.Color(data.color),
-        emissiveIntensity: isDimmed ? 0.2 : isSelected ? 2.6 : isHovered ? 2.1 : 1.4,
+        emissiveIntensity: isDimmed ? 0.2 : isSelected ? 3.0 : isHovered ? 2.4 : 1.6,
         transparent: isDimmed,
-        opacity: isDimmed ? 0.4 : 1.0
+        opacity: isDimmed ? 0.35 : 1.0
       });
     } else {
       return new THREE.MeshStandardMaterial({
@@ -153,12 +149,12 @@ function ArchitecturalBuilding({
         onPointerOut();
       }}
     >
-      {/* Stepped Tiers (Setbacks) */}
+      {/* Stepped Setback Tiers */}
       {data.tiers.map((tier, idx) => (
         <mesh key={idx} position={[0, tier.y, 0]} castShadow receiveShadow>
           <boxGeometry args={[tier.width, tier.height, tier.depth]} />
           <primitive object={buildingMaterial} attach="material" />
-          <Edges linewidth={isSelected || isHovered ? 2 : 1.2} threshold={15} color={edgeColor} />
+          <Edges linewidth={isSelected || isHovered ? 2.2 : 1.3} threshold={15} color={edgeColor} />
         </mesh>
       ))}
 
@@ -166,37 +162,43 @@ function ArchitecturalBuilding({
       {data.hasSpire && (
         <group position={[0, data.height + data.spireHeight / 2, 0]}>
           <mesh castShadow>
-            <cylinderGeometry args={[0.08, 0.2, data.spireHeight, 8]} />
+            <cylinderGeometry args={[0.08, 0.22, data.spireHeight, 8]} />
             <meshStandardMaterial 
-              color={isDark ? data.color : '#475569'} 
+              color={data.color} 
               emissive={isDark ? data.color : '#000000'}
-              emissiveIntensity={isDark ? 3.0 : 0}
+              emissiveIntensity={isDark ? 3.2 : 0}
             />
           </mesh>
           <mesh position={[0, data.spireHeight / 2 + 0.2, 0]}>
-            <sphereGeometry args={[0.35, 12, 12]} />
-            <meshBasicMaterial color={data.isGodObject ? '#ef4444' : isDark ? '#ffffff' : '#dc2626'} />
+            <sphereGeometry args={[0.4, 12, 12]} />
+            <meshBasicMaterial color={data.isGodObject ? '#ef4444' : data.glowColor} />
           </mesh>
         </group>
       )}
 
-      {/* God Object Pulsing Warning Ring */}
+      {/* God Object Warning Halo Rings */}
       {data.isGodObject && isDark && (
-        <mesh position={[0, data.height + 8, 0]}>
-          <cylinderGeometry args={[data.width * 0.7, data.width * 0.7, 0.4, 16]} />
-          <meshBasicMaterial color="#ef4444" wireframe transparent opacity={0.65} />
-        </mesh>
+        <group position={[0, data.height + 8, 0]}>
+          <mesh>
+            <cylinderGeometry args={[data.width * 0.75, data.width * 0.75, 0.4, 16]} />
+            <meshBasicMaterial color="#ef4444" wireframe transparent opacity={0.7} />
+          </mesh>
+          <mesh position={[0, 4, 0]}>
+            <cylinderGeometry args={[data.width * 0.5, data.width * 0.5, 0.3, 16]} />
+            <meshBasicMaterial color="#ff0055" wireframe transparent opacity={0.8} />
+          </mesh>
+        </group>
       )}
 
       {/* Floating HUD Badge on Hover */}
       {isHovered && !isSelected && (
         <group position={[0, data.height + (data.hasSpire ? data.spireHeight : 0) + 3, 0]}>
           <Text
-            fontSize={1.2}
-            color={isDark ? '#00f5ff' : '#0284c7'}
+            fontSize={1.3}
+            color={data.color}
             anchorX="center"
             anchorY="middle"
-            outlineWidth={0.1}
+            outlineWidth={0.12}
             outlineColor={isDark ? '#000000' : '#ffffff'}
           >
             {`${data.name} [${data.lines} LOC]`}
@@ -209,7 +211,7 @@ function ArchitecturalBuilding({
         <>
           <mesh position={[0, (data.height + 70) / 2, 0]}>
             <cylinderGeometry args={[0.3, 1.4, data.height + 70, 16]} />
-            <meshBasicMaterial color={isDark ? '#00f5ff' : '#0284c7'} transparent opacity={0.3} />
+            <meshBasicMaterial color={data.color} transparent opacity={0.35} />
           </mesh>
           <Text
             position={[0, data.height + (data.hasSpire ? data.spireHeight : 0) + 4, 0]}
@@ -255,7 +257,7 @@ function CityBlock({
       <mesh position={[0, SIDEWALK_HEIGHT / 2, 0]} receiveShadow>
         <boxGeometry args={[BLOCK_SIZE, SIDEWALK_HEIGHT, BLOCK_SIZE]} />
         <meshStandardMaterial
-          color={isDark ? '#0e1422' : '#e2e8f0'}
+          color={isDark ? '#0d1322' : '#e2e8f0'}
           roughness={0.8}
           metalness={0.1}
           transparent={isDimmed}
@@ -268,7 +270,7 @@ function CityBlock({
         />
       </mesh>
 
-      {/* Buildings in this block */}
+      {/* Buildings inside this block */}
       {block.buildings.map((b) => (
         <ArchitecturalBuilding
           key={b.id}
@@ -286,17 +288,16 @@ function CityBlock({
   );
 }
 
-// --- Floating 3D District Hologram Billboards ---
+// --- Floating 3D District Hologram Markers ---
 function DistrictLabels({ districts, theme }: { districts: DistrictMeta[]; theme: 'dark' | 'light' }) {
   const isDark = theme === 'dark';
   return (
     <group>
       {districts.map((d) => (
-        <group key={d.key} position={[d.center[0], 28, d.center[2]]}>
-          {/* Glowing District Title Banner */}
+        <group key={d.key} position={[d.center[0], 36, d.center[2]]}>
           <Text
-            fontSize={2.4}
-            color={isDark ? d.color : '#0f172a'}
+            fontSize={2.2}
+            color={d.color}
             anchorX="center"
             anchorY="middle"
             outlineWidth={0.15}
@@ -305,13 +306,13 @@ function DistrictLabels({ districts, theme }: { districts: DistrictMeta[]; theme
             {`// ${d.name.toUpperCase()}`}
           </Text>
           <Text
-            position={[0, -2.5, 0]}
-            fontSize={1.2}
-            color={isDark ? '#94a3b8' : '#475569'}
+            position={[0, -2.4, 0]}
+            fontSize={1.1}
+            color={isDark ? '#cbd5e1' : '#475569'}
             anchorX="center"
             anchorY="middle"
           >
-            {`${d.subname} • ${d.count} ARCHIVOS • ${d.totalLoc} LOC`}
+            {`${d.subname} • ${d.count} ARCHIVOS`}
           </Text>
         </group>
       ))}
@@ -319,51 +320,66 @@ function DistrictLabels({ districts, theme }: { districts: DistrictMeta[]; theme
   );
 }
 
-// --- Urban Street Grid, Avenues & Crosswalks ---
-function UrbanStreetGrid({ theme }: { theme: 'dark' | 'light' }) {
+// --- Urban Street Grid, Avenues & Markings ---
+function UrbanStreetGrid({ 
+  avenueXList, 
+  avenueZList, 
+  theme 
+}: { 
+  avenueXList: number[]; 
+  avenueZList: number[]; 
+  theme: 'dark' | 'light'; 
+}) {
   const isDark = theme === 'dark';
 
-  const { laneDividers, crosswalks } = useMemo(() => {
+  const { laneDividers, crosswalks, groundSize } = useMemo(() => {
     const dividers: Array<{ pos: [number, number, number]; rotY: number }> = [];
     const crosses: Array<{ pos: [number, number, number]; rotY: number }> = [];
 
-    const coords: number[] = [];
-    for (let i = -4; i <= 4; i++) {
-      coords.push((i - 0.5) * BLOCK_PITCH);
-    }
+    const minX = Math.min(...avenueXList, -50);
+    const maxX = Math.max(...avenueXList, 50);
+    const minZ = Math.min(...avenueZList, -50);
+    const maxZ = Math.max(...avenueZList, 50);
+
+    const spanX = maxX - minX + 60;
+    const spanZ = maxZ - minZ + 60;
 
     // Avenues along X
-    coords.forEach((avZ) => {
-      for (let x = -4 * BLOCK_PITCH; x <= 4 * BLOCK_PITCH; x += 6) {
+    avenueZList.forEach((avZ) => {
+      for (let x = minX; x <= maxX; x += 6) {
         dividers.push({ pos: [x, 0.06, avZ], rotY: 0 });
       }
     });
 
     // Avenues along Z
-    coords.forEach((avX) => {
-      for (let z = -4 * BLOCK_PITCH; z <= 4 * BLOCK_PITCH; z += 6) {
+    avenueXList.forEach((avX) => {
+      for (let z = minZ; z <= maxZ; z += 6) {
         dividers.push({ pos: [avX, 0.06, z], rotY: Math.PI / 2 });
       }
     });
 
     // Crosswalks at intersections
-    coords.forEach((avX) => {
-      coords.forEach((avZ) => {
-        crosses.push({ pos: [avX + 4, 0.07, avZ], rotY: Math.PI / 2 });
-        crosses.push({ pos: [avX - 4, 0.07, avZ], rotY: Math.PI / 2 });
-        crosses.push({ pos: [avX, 0.07, avZ + 4], rotY: 0 });
-        crosses.push({ pos: [avX, 0.07, avZ - 4], rotY: 0 });
+    avenueXList.forEach((avX) => {
+      avenueZList.forEach((avZ) => {
+        crosses.push({ pos: [avX + 3.8, 0.07, avZ], rotY: Math.PI / 2 });
+        crosses.push({ pos: [avX - 3.8, 0.07, avZ], rotY: Math.PI / 2 });
+        crosses.push({ pos: [avX, 0.07, avZ + 3.8], rotY: 0 });
+        crosses.push({ pos: [avX, 0.07, avZ - 3.8], rotY: 0 });
       });
     });
 
-    return { laneDividers: dividers, crosswalks: crosses };
-  }, []);
+    return { 
+      laneDividers: dividers, 
+      crosswalks: crosses, 
+      groundSize: [Math.max(spanX, 300), Math.max(spanZ, 300)] as [number, number] 
+    };
+  }, [avenueXList, avenueZList]);
 
   return (
     <group>
-      {/* Infinite City Ground Asphalt Plane */}
+      {/* Contiguous Asphalt Road Ground Plane */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[700, 700]} />
+        <planeGeometry args={groundSize} />
         <meshStandardMaterial
           color={isDark ? '#05070f' : '#1e293b'}
           roughness={0.9}
@@ -374,7 +390,7 @@ function UrbanStreetGrid({ theme }: { theme: 'dark' | 'light' }) {
       {/* Street Centerline Dashed Stripes */}
       {laneDividers.map((d, i) => (
         <mesh key={`div-${i}`} position={d.pos} rotation={[0, d.rotY, 0]}>
-          <planeGeometry args={[3.2, 0.3]} />
+          <planeGeometry args={[3.0, 0.28]} />
           <meshBasicMaterial 
             color={isDark ? '#38bdf8' : '#ffffff'} 
             transparent 
@@ -386,7 +402,7 @@ function UrbanStreetGrid({ theme }: { theme: 'dark' | 'light' }) {
       {/* Intersection Crosswalks */}
       {crosswalks.map((c, i) => (
         <mesh key={`cross-${i}`} position={c.pos} rotation={[-Math.PI / 2, 0, c.rotY]}>
-          <planeGeometry args={[4.2, 1.2]} />
+          <planeGeometry args={[4.0, 1.1]} />
           <meshBasicMaterial 
             color={isDark ? '#63f7ff' : '#f8fafc'} 
             transparent 
@@ -420,7 +436,7 @@ export default function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [lang, setLang] = useState<'es' | 'en'>('es');
 
-  // Build complete 3D metropolis from parsed repo or rich enterprise AST
+  // Build contiguous integrated city
   const cityModel: CompleteCityModel = useMemo(() => {
     return buildCompleteCity(treeData);
   }, [treeData]);
@@ -501,7 +517,6 @@ export default function App() {
     const codeFiles = cityModel.allBuildings;
     if (codeFiles.length < 2) return;
 
-    // Pick database model and API controller for bottleneck
     const dbFiles = codeFiles.filter((b) => b.category === 'database');
     const apiFiles = codeFiles.filter((b) => b.category === 'core-api');
 
@@ -572,7 +587,6 @@ export default function App() {
       setShowAiModal(true);
       setFixApplied(false);
     } catch {
-      // Mock / fallback preview
       setFileContent(
         `// AST Module: ${selectedNode.name}\n// Path: ${selectedNode.path}\n// District: ${selectedNode.districtName}\n\nimport { db } from './db';\n\nexport async function handleDataFlow() {\n  const items = await db.query('SELECT * FROM main_table');\n  // N+1 Critical Query Loop Bottleneck\n  for (const item of items) {\n    item.details = await db.query('SELECT * FROM sub_items WHERE parent_id = ' + item.id);\n  }\n  return items;\n}`
       );
@@ -814,7 +828,7 @@ export default function App() {
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: selectedNode.color }}></span>
                   <span className="text-[9px] font-mono-code uppercase font-bold" style={{ color: selectedNode.color }}>
-                    {selectedNode.districtName}
+                    {selectedNode.badge}
                   </span>
                 </div>
                 <span className="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-surface-container uppercase text-outline">
@@ -822,7 +836,7 @@ export default function App() {
                 </span>
               </div>
               <div className="flex flex-col">
-                <h3 className={`font-mono-code font-bold text-sm truncate ${theme === 'dark' ? 'text-[#00f5ff]' : 'text-blue-700'}`}>
+                <h3 className={`font-mono-code font-bold text-sm truncate`} style={{ color: selectedNode.color }}>
                   {selectedNode.name}
                 </h3>
                 <p className="text-[10px] font-mono-code text-outline truncate mt-0.5">
@@ -857,34 +871,38 @@ export default function App() {
 
       {/* 3D Canvas Viewport */}
       <main className="fixed inset-0 z-0 pl-80 pt-16 pb-8">
-        <Canvas camera={{ position: [90, 85, 105], fov: 42 }}>
+        <Canvas camera={{ position: [55, 60, 65], fov: 42 }}>
           <color attach="background" args={[theme === 'dark' ? '#060811' : '#e2e8f0']} />
-          <fog attach="fog" args={[theme === 'dark' ? '#060811' : '#e2e8f0', 100, 500]} />
+          <fog attach="fog" args={[theme === 'dark' ? '#060811' : '#e2e8f0', 80, 420]} />
 
           {/* Lighting */}
           {theme === 'dark' ? (
             <>
-              <ambientLight intensity={0.5} />
-              <directionalLight position={[100, 160, 80]} intensity={1.8} color="#38bdf8" />
-              <directionalLight position={[-100, 120, -80]} intensity={1.4} color="#ec4899" />
-              <pointLight position={[0, 60, 0]} intensity={1.2} color="#ffffff" distance={300} />
+              <ambientLight intensity={0.55} />
+              <directionalLight position={[80, 140, 70]} intensity={1.8} color="#38bdf8" />
+              <directionalLight position={[-80, 100, -70]} intensity={1.4} color="#ec4899" />
+              <pointLight position={[0, 50, 0]} intensity={1.2} color="#ffffff" distance={250} />
             </>
           ) : (
             <>
               <ambientLight intensity={1.2} />
-              <directionalLight position={[120, 180, 100]} intensity={2.4} color="#ffffff" castShadow />
-              <directionalLight position={[-80, 100, -80]} intensity={0.8} color="#cbd5e1" />
+              <directionalLight position={[100, 160, 90]} intensity={2.4} color="#ffffff" castShadow />
+              <directionalLight position={[-70, 90, -70]} intensity={0.8} color="#cbd5e1" />
               <hemisphereLight args={['#ffffff', '#cbd5e1', 0.8]} />
             </>
           )}
 
-          {/* Urban Streets, Avenues & Markings */}
-          <UrbanStreetGrid theme={theme} />
+          {/* Urban Streets, Avenues & Markings - Perfectly wrapped around contiguous city */}
+          <UrbanStreetGrid 
+            avenueXList={cityModel.avenueXList} 
+            avenueZList={cityModel.avenueZList} 
+            theme={theme} 
+          />
 
           {/* Floating 3D District Hologram Titles */}
           <DistrictLabels districts={cityModel.districts} theme={theme} />
 
-          {/* 100% Functional City Blocks Categorized by District */}
+          {/* 100% Contiguous City Blocks */}
           {cityModel.blocks.map((block) => (
             <CityBlock
               key={block.id}
@@ -901,19 +919,20 @@ export default function App() {
           {/* Living Traffic System */}
           <TrafficSystem events={trafficEvents} theme={theme} />
 
-          {/* Orbit Controls */}
+          {/* Orbit Controls centered on the city */}
           <OrbitControls
             makeDefault
+            target={[0, 8, 0]}
             dampingFactor={0.05}
             minDistance={15}
-            maxDistance={500}
+            maxDistance={450}
             maxPolarAngle={Math.PI / 2 - 0.05}
           />
 
           {/* Cyberpunk Bloom in Dark Mode */}
           {theme === 'dark' && (
             <EffectComposer>
-              <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} height={300} intensity={1.6} />
+              <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} height={300} intensity={1.5} />
             </EffectComposer>
           )}
         </Canvas>

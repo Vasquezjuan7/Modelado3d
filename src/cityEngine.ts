@@ -7,19 +7,17 @@ export interface DistrictMeta {
   name: string;
   subname: string;
   color: string;
-  plateColor: string;
   icon: string;
-  center: [number, number, number];
-  bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   count: number;
   totalLoc: number;
+  center: [number, number, number];
 }
 
 export interface BuildingTier {
   width: number;
   depth: number;
   height: number;
-  y: number; // Center Y
+  y: number;
 }
 
 export interface BuildingData {
@@ -31,6 +29,8 @@ export interface BuildingData {
   methods: number;
   extension: string;
   color: string;
+  glowColor: string;
+  badge: string;
   category: DistrictCategory;
   districtName: string;
   buildingType: 'godObject' | 'skyscraper' | 'tower' | 'block' | 'pavilion';
@@ -68,39 +68,58 @@ export interface CompleteCityModel {
   totalClasses: number;
   avenueXList: number[];
   avenueZList: number[];
-  bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
+  cityWidth: number;
+  cityDepth: number;
 }
 
 export const BLOCK_SIZE = 26;
-export const STREET_WIDTH = 6;
-export const BLOCK_PITCH = BLOCK_SIZE + STREET_WIDTH; // 32
+export const STREET_WIDTH = 5;
+export const BLOCK_PITCH = BLOCK_SIZE + STREET_WIDTH; // 31
 export const SIDEWALK_HEIGHT = 0.3;
-export const GRID_RADIUS = 4;
+export const GRID_RADIUS = 3;
 
-// Categorize any file into 6 core architectural districts
-export function categorizeFile(filePath: string, fileName: string): {
+// Diverse, high-contrast color palette based on language, role & complexity
+export function getBuildingColor(filePath: string, fileName: string): {
+  color: string;
+  glowColor: string;
+  badge: string;
   category: DistrictCategory;
   districtName: string;
-  color: string;
 } {
   const p = filePath.toLowerCase();
   const n = fileName.toLowerCase();
   const ext = n.includes('.') ? n.split('.').pop() || '' : '';
 
-  // 1. Tests & QA
+  // 1. God Object / High Complexity Monolith -> Vivid Crimson Red
+  if (n.includes('god object') || p.includes('godobject') || n.includes('monolith')) {
+    return {
+      color: '#ef4444',
+      glowColor: '#ff0055',
+      badge: 'GOD OBJECT',
+      category: 'core-api',
+      districtName: 'Distrito Financiero (Core API)'
+    };
+  }
+
+  // 2. Tests & QA -> Hot Pink / Magenta
   if (
     p.includes('test') ||
     p.includes('spec') ||
     p.includes('__tests__') ||
     p.includes('cypress') ||
-    p.includes('jest') ||
     n.includes('.test.') ||
     n.includes('.spec.')
   ) {
-    return { category: 'tests', districtName: 'Distrito Seguridad & Tests', color: '#ec4899' };
+    return {
+      color: '#ec4899',
+      glowColor: '#f472b6',
+      badge: 'TEST / QA',
+      category: 'tests',
+      districtName: 'Distrito Seguridad & Tests'
+    };
   }
 
-  // 2. Database & Storage Models
+  // 3. Database, Models & SQL -> Vibrant Emerald Green
   if (
     p.includes('db') ||
     p.includes('database') ||
@@ -109,67 +128,121 @@ export function categorizeFile(filePath: string, fileName: string): {
     p.includes('migration') ||
     p.includes('sql') ||
     p.includes('prisma') ||
-    p.includes('entity') ||
     p.includes('redis') ||
     p.includes('postgres') ||
     ['sql', 'prisma'].includes(ext)
   ) {
-    return { category: 'database', districtName: 'Distrito Industrial (Database & Storage)', color: '#10b981' };
+    return {
+      color: '#10b981',
+      glowColor: '#34d399',
+      badge: 'DATABASE',
+      category: 'database',
+      districtName: 'Distrito Industrial (Database)'
+    };
   }
 
-  // 3. Workers, Daemons & Runtime
+  // 4. Workers, Queues, Daemons & Low-Level -> Royal Violet
   if (
     p.includes('worker') ||
     p.includes('job') ||
     p.includes('queue') ||
     p.includes('celery') ||
     p.includes('daemon') ||
-    p.includes('task') ||
     p.includes('cron') ||
     p.includes('engine') ||
-    p.includes('stream') ||
     ['cpp', 'rs', 'go', 'sh', 'bash'].includes(ext)
   ) {
-    return { category: 'workers', districtName: 'Distrito Gubernamental (Workers & Daemons)', color: '#a855f7' };
+    return {
+      color: '#a855f7',
+      glowColor: '#c084fc',
+      badge: 'WORKER / RUNTIME',
+      category: 'workers',
+      districtName: 'Distrito Gubernamental (Workers)'
+    };
   }
 
-  // 4. Core Logic & API
-  if (
-    p.includes('api') ||
-    p.includes('route') ||
-    p.includes('controller') ||
-    p.includes('service') ||
-    p.includes('handler') ||
-    p.includes('auth') ||
-    p.includes('token') ||
-    p.includes('core') ||
-    p.includes('server') ||
-    p.includes('middleware') ||
-    p.includes('router') ||
-    ['py', 'java', 'php', 'rb'].includes(ext)
-  ) {
-    return { category: 'core-api', districtName: 'Distrito Financiero (Core API & Auth)', color: '#f59e0b' };
+  // 5. TypeScript -> Bright Neon Cyan
+  if (ext === 'ts' || ext === 'tsx') {
+    const isUI = p.includes('component') || p.includes('view') || p.includes('page') || ext === 'tsx';
+    return {
+      color: '#00f5ff',
+      glowColor: '#63f7ff',
+      badge: 'TYPESCRIPT',
+      category: isUI ? 'frontend' : 'core-api',
+      districtName: isUI ? 'Distrito Comercial (Frontend)' : 'Distrito Financiero (Core API)'
+    };
   }
 
-  // 5. Config, Build & Infrastructure
+  // 6. JavaScript -> Warm Amber / Gold
+  if (ext === 'js' || ext === 'jsx' || ext === 'mjs') {
+    const isUI = p.includes('component') || p.includes('view') || ext === 'jsx';
+    return {
+      color: '#f59e0b',
+      glowColor: '#fbbf24',
+      badge: 'JAVASCRIPT',
+      category: isUI ? 'frontend' : 'core-api',
+      districtName: isUI ? 'Distrito Comercial (Frontend)' : 'Distrito Financiero (Core API)'
+    };
+  }
+
+  // 7. Python -> Deep Sapphire Blue
+  if (ext === 'py') {
+    return {
+      color: '#3b82f6',
+      glowColor: '#60a5fa',
+      badge: 'PYTHON',
+      category: 'core-api',
+      districtName: 'Distrito Financiero (Core API)'
+    };
+  }
+
+  // 8. Java, Kotlin, Rust -> Bright Coral Orange
+  if (['java', 'kt', 'rs'].includes(ext)) {
+    return {
+      color: '#f97316',
+      glowColor: '#fb923c',
+      badge: ext.toUpperCase(),
+      category: 'core-api',
+      districtName: 'Distrito Financiero (Core API)'
+    };
+  }
+
+  // 9. Styles & Markup (CSS, HTML, Vue, Svelte) -> Electric Purple
+  if (['css', 'scss', 'html', 'vue', 'svelte'].includes(ext)) {
+    return {
+      color: '#8b5cf6',
+      glowColor: '#a78bfa',
+      badge: ext.toUpperCase(),
+      category: 'frontend',
+      districtName: 'Distrito Comercial (Frontend)'
+    };
+  }
+
+  // 10. Config, Build & Infrastructure -> Crisp Ice White / Slate
   if (
-    p.includes('config') ||
-    p.includes('docker') ||
-    p.includes('.github') ||
-    p.includes('build') ||
-    p.includes('scripts') ||
-    ['json', 'yaml', 'yml', 'toml', 'env', 'md', 'lock', 'xml'].includes(ext) ||
-    n.startsWith('vite.') ||
-    n.startsWith('webpack.') ||
-    n.startsWith('tailwind.') ||
+    ['json', 'yaml', 'yml', 'toml', 'env', 'md', 'xml'].includes(ext) ||
+    n.startsWith('vite') ||
+    n.startsWith('package') ||
     n.startsWith('tsconfig') ||
-    n.startsWith('package.')
+    n.startsWith('docker')
   ) {
-    return { category: 'config', districtName: 'Distrito Infraestructura (Config & Build)', color: '#64748b' };
+    return {
+      color: '#e2e8f0',
+      glowColor: '#94a3b8',
+      badge: 'CONFIG',
+      category: 'config',
+      districtName: 'Distrito Infraestructura (Config)'
+    };
   }
 
-  // 6. Frontend & UI (Default for tsx, jsx, vue, html, css, ui, etc.)
-  return { category: 'frontend', districtName: 'Distrito Comercial (Frontend & UI)', color: '#00f5ff' };
+  // Default Fallback
+  return {
+    color: '#06b6d4',
+    glowColor: '#22d3ee',
+    badge: ext.toUpperCase() || 'CODE',
+    category: 'frontend',
+    districtName: 'Distrito Comercial (Frontend)'
+  };
 }
 
 export function generateBuildingTiers(
@@ -189,7 +262,7 @@ export function generateBuildingTiers(
   hasHelipad: boolean;
   isGodObject: boolean;
 } {
-  const isGodObject = isGodObjectParam || lines > 1200 || sizeBytes > 42000;
+  const isGodObject = isGodObjectParam || lines > 1100 || sizeBytes > 40000;
   let height: number;
   let buildingType: 'godObject' | 'skyscraper' | 'tower' | 'block' | 'pavilion';
   let tiers: BuildingTier[] = [];
@@ -202,11 +275,10 @@ export function generateBuildingTiers(
 
   if (isGodObject) {
     buildingType = 'godObject';
-    height = Math.min(65, 48 + Math.round((lines - 1200) * 0.012));
+    height = Math.min(65, 48 + Math.round((lines - 1100) * 0.012));
     hasSpire = true;
     spireHeight = 11;
     
-    // 5-tier stepped setback skyscraper
     const h1 = height * 0.22;
     const h2 = height * 0.26;
     const h3 = height * 0.24;
@@ -226,7 +298,6 @@ export function generateBuildingTiers(
     hasSpire = true;
     spireHeight = 6.5;
 
-    // 4-tier stepped setback skyscraper
     const h1 = height * 0.28;
     const h2 = height * 0.32;
     const h3 = height * 0.26;
@@ -243,7 +314,6 @@ export function generateBuildingTiers(
     height = Math.min(26, 16 + Math.round((lines - 120) * 0.042));
     hasHelipad = lines > 220;
 
-    // 3-tier mid-rise tower
     const h1 = height * 0.35;
     const h2 = height * 0.48;
     const h3 = height * 0.17;
@@ -257,7 +327,6 @@ export function generateBuildingTiers(
     buildingType = 'block';
     height = Math.min(15, 10 + Math.round((lines - 40) * 0.06));
 
-    // 2-tier commercial block
     const h1 = height * 0.75;
     const h2 = height * 0.25;
 
@@ -269,7 +338,6 @@ export function generateBuildingTiers(
     buildingType = 'pavilion';
     height = Math.min(9, 5 + Math.round(lines * 0.08));
 
-    // 2-tier low-rise pavilion
     const h1 = height * 0.8;
     const h2 = height * 0.2;
 
@@ -294,7 +362,6 @@ export function generateBuildingTiers(
 
 // Default rich enterprise AST codebase
 export const DEFAULT_ENTERPRISE_AST = [
-  // Financial District (Core API & Auth) - Includes God Object
   { name: 'UserManager.py [GOD OBJECT]', path: 'src/core/UserManager.py', lines: 3450, methods: 142, size: 124000 },
   { name: 'BillingService.py', path: 'src/api/BillingService.py', lines: 890, methods: 38, size: 32000 },
   { name: 'AuthController.java', path: 'src/auth/AuthController.java', lines: 620, methods: 24, size: 22000 },
@@ -303,7 +370,6 @@ export const DEFAULT_ENTERPRISE_AST = [
   { name: 'TokenAuth.go', path: 'src/auth/TokenAuth.go', lines: 480, methods: 19, size: 17000 },
   { name: 'PermissionMiddleware.py', path: 'src/core/PermissionMiddleware.py', lines: 310, methods: 14, size: 11000 },
 
-  // Commercial District (Frontend & UI)
   { name: 'App.tsx', path: 'src/App.tsx', lines: 520, methods: 22, size: 18500 },
   { name: 'CityViewport.tsx', path: 'src/components/CityViewport.tsx', lines: 680, methods: 28, size: 24000 },
   { name: 'TrafficCanvas.tsx', path: 'src/components/TrafficCanvas.tsx', lines: 510, methods: 22, size: 18000 },
@@ -314,7 +380,6 @@ export const DEFAULT_ENTERPRISE_AST = [
   { name: 'ModalViewer.tsx', path: 'src/components/ModalViewer.tsx', lines: 180, methods: 8, size: 6200 },
   { name: 'ThemeContext.tsx', path: 'src/context/ThemeContext.tsx', lines: 140, methods: 6, size: 5200 },
 
-  // Industrial District (Database & Storage)
   { name: 'PostgresPool.java', path: 'src/db/PostgresPool.java', lines: 750, methods: 32, size: 27000 },
   { name: 'TelemetryDB.go', path: 'src/db/TelemetryDB.go', lines: 460, methods: 19, size: 16500 },
   { name: 'RedisCache.py', path: 'src/cache/RedisCache.py', lines: 320, methods: 12, size: 11000 },
@@ -323,7 +388,6 @@ export const DEFAULT_ENTERPRISE_AST = [
   { name: 'SessionStore.go', path: 'src/db/SessionStore.go', lines: 390, methods: 16, size: 14000 },
   { name: 'InvoiceEntity.ts', path: 'src/models/InvoiceEntity.ts', lines: 340, methods: 15, size: 12500 },
 
-  // Government District (Workers & Daemons)
   { name: 'CeleryWorker.py', path: 'src/workers/CeleryWorker.py', lines: 580, methods: 24, size: 21000 },
   { name: 'ASTParserService.py', path: 'src/services/ASTParserService.py', lines: 940, methods: 35, size: 33000 },
   { name: 'TrafficSimulator.cpp', path: 'src/engine/TrafficSimulator.cpp', lines: 810, methods: 29, size: 29000 },
@@ -331,7 +395,6 @@ export const DEFAULT_ENTERPRISE_AST = [
   { name: 'ReportGenerator.py', path: 'src/services/ReportGenerator.py', lines: 360, methods: 14, size: 13000 },
   { name: 'SyncDaemon.go', path: 'src/daemon/SyncDaemon.go', lines: 490, methods: 20, size: 17500 },
 
-  // Infrastructure & Config District
   { name: 'index.html', path: 'index.html', lines: 110, methods: 4, size: 4000 },
   { name: 'package.json', path: 'package.json', lines: 85, methods: 1, size: 3200 },
   { name: 'tailwind.config.js', path: 'tailwind.config.js', lines: 95, methods: 1, size: 3500 },
@@ -340,18 +403,77 @@ export const DEFAULT_ENTERPRISE_AST = [
   { name: 'README.md', path: 'README.md', lines: 140, methods: 2, size: 5000 },
   { name: 'docker-compose.yml', path: 'docker-compose.yml', lines: 120, methods: 3, size: 4500 },
 
-  // Quality & Security (Tests & QA)
   { name: 'AuthService.test.ts', path: 'tests/AuthService.test.ts', lines: 320, methods: 14, size: 11500 },
   { name: 'Traffic.spec.tsx', path: 'tests/Traffic.spec.tsx', lines: 280, methods: 12, size: 9800 },
   { name: 'DatabasePool.test.py', path: 'tests/DatabasePool.test.py', lines: 410, methods: 18, size: 14500 }
 ];
+
+// Concentric / Spiral grid generator so all blocks are 100% contiguous around (0, 0)
+function getContiguousSpiralGridSlots(totalBlocks: number): Array<{ gx: number; gz: number }> {
+  const slots: Array<{ gx: number; gz: number }> = [{ gx: 0, gz: 0 }];
+  let x = 0;
+  let z = 0;
+  let dx = 0;
+  let dz = -1;
+
+  const maxCoord = Math.ceil(Math.sqrt(totalBlocks)) + 2;
+  const maxSteps = maxCoord * maxCoord;
+
+  for (let i = 0; i < maxSteps; i++) {
+    if (slots.length >= totalBlocks) break;
+    if (x === z || (x < 0 && x === -z) || (x > 0 && x === 1 - z)) {
+      const temp = dx;
+      dx = -dz;
+      dz = temp;
+    }
+    x += dx;
+    z += dz;
+    slots.push({ gx: x, gz: z });
+  }
+
+  return slots;
+}
+
+// Subgrid lot positioning inside a block (22x22 usable area)
+function getSubgridPositions(count: number): Array<{ x: number; z: number; lotW: number; lotD: number }> {
+  if (count <= 1) return [{ x: 0, z: 0, lotW: 16, lotD: 16 }];
+  if (count === 2) {
+    return [
+      { x: -5.5, z: 0, lotW: 10, lotD: 12 },
+      { x: 5.5, z: 0, lotW: 10, lotD: 12 }
+    ];
+  }
+  if (count === 3) {
+    return [
+      { x: -5.5, z: -5.5, lotW: 9.5, lotD: 9.5 },
+      { x: 5.5, z: -5.5, lotW: 9.5, lotD: 9.5 },
+      { x: 0, z: 5.5, lotW: 11, lotD: 9.5 }
+    ];
+  }
+  if (count === 4) {
+    return [
+      { x: -5.5, z: -5.5, lotW: 9.5, lotD: 9.5 },
+      { x: 5.5, z: -5.5, lotW: 9.5, lotD: 9.5 },
+      { x: -5.5, z: 5.5, lotW: 9.5, lotD: 9.5 },
+      { x: 5.5, z: 5.5, lotW: 9.5, lotD: 9.5 }
+    ];
+  }
+  // 5 or 6 buildings per block
+  return [
+    { x: -6.0, z: -6.5, lotW: 8.5, lotD: 8.5 },
+    { x: 6.0, z: -6.5, lotW: 8.5, lotD: 8.5 },
+    { x: -6.0, z: 0, lotW: 8.5, lotD: 7.5 },
+    { x: 6.0, z: 0, lotW: 8.5, lotD: 7.5 },
+    { x: 0, z: 6.5, lotW: 10, lotD: 8.0 }
+  ];
+}
 
 export function buildCompleteCity(rootNode: FileNode | null): CompleteCityModel {
   const blocks: CityBlockData[] = [];
   const allBuildings: BuildingData[] = [];
   const flatNodes = new Map<string, BuildingData>();
 
-  // 1. Ingest real repository files from AST or default
+  // 1. Ingest real repository files
   let rawFiles: Array<{ name: string; path: string; lines: number; methods: number; size: number }> = [];
 
   if (rootNode) {
@@ -382,282 +504,157 @@ export function buildCompleteCity(rootNode: FileNode | null): CompleteCityModel 
     totalLines += f.lines;
   });
 
-  // 2. Classify EVERY file into functional categories
-  const categoryBuckets: Record<DistrictCategory, Array<{
-    name: string;
-    path: string;
-    lines: number;
-    methods: number;
-    size: number;
-    districtName: string;
-    color: string;
-    category: DistrictCategory;
-  }>> = {
-    'frontend': [],
-    'core-api': [],
-    'database': [],
-    'workers': [],
-    'config': [],
-    'tests': []
-  };
-
-  rawFiles.forEach((file) => {
-    const { category, districtName, color } = categorizeFile(file.path, file.name);
-    categoryBuckets[category].push({
+  // 2. Classify and enrich each file with distinct vibrant colors
+  const enrichedFiles = rawFiles.map((file) => {
+    const { color, glowColor, badge, category, districtName } = getBuildingColor(file.path, file.name);
+    return {
       ...file,
+      color,
+      glowColor,
+      badge,
       category,
-      districtName,
-      color
+      districtName
+    };
+  });
+
+  // 3. Sort files descending by LOC so the skyline is integrated:
+  // TALLEST skyscrapers occupy the center of the city, stepping down outward!
+  enrichedFiles.sort((a, b) => b.lines - a.lines);
+
+  // Group files into blocks (3 to 4 buildings per block)
+  const buildingsPerBlock = enrichedFiles.length > 30 ? 4 : 3;
+  const totalBlocks = Math.ceil(enrichedFiles.length / buildingsPerBlock);
+
+  // 4. Generate contiguous grid slots starting from (0, 0)
+  // No separated islands, no empty voids! Everything generates together!
+  const gridSlots = getContiguousSpiralGridSlots(totalBlocks);
+
+  let minGx = 0, maxGx = 0, minGz = 0, maxGz = 0;
+
+  for (let bIdx = 0; bIdx < totalBlocks; bIdx++) {
+    const slot = gridSlots[bIdx] || { gx: 0, gz: 0 };
+    minGx = Math.min(minGx, slot.gx);
+    maxGx = Math.max(maxGx, slot.gx);
+    minGz = Math.min(minGz, slot.gz);
+    maxGz = Math.max(maxGz, slot.gz);
+
+    const chunk = enrichedFiles.slice(bIdx * buildingsPerBlock, (bIdx + 1) * buildingsPerBlock);
+    const blockCenterX = slot.gx * BLOCK_PITCH;
+    const blockCenterZ = slot.gz * BLOCK_PITCH;
+    const subLots = getSubgridPositions(chunk.length);
+
+    const blockBuildings: BuildingData[] = [];
+    const dominantCategory = chunk[0]?.category || 'frontend';
+    const dominantDistrict = chunk[0]?.districtName || 'Distrito Central';
+    const dominantColor = chunk[0]?.color || '#00f5ff';
+
+    chunk.forEach((file, fIdx) => {
+      const lot = subLots[fIdx] || subLots[0];
+      const isGod = file.name.includes('GOD OBJECT') || file.lines > 1100;
+
+      const geom = generateBuildingTiers(file.lines, file.size, lot.lotW, lot.lotD, isGod);
+      const absX = blockCenterX + lot.x;
+      const absZ = blockCenterZ + lot.z;
+      const ext = file.name.includes('.') ? file.name.split('.').pop() || '' : '';
+
+      const building: BuildingData = {
+        id: file.path,
+        name: file.name,
+        path: file.path,
+        size: file.size,
+        lines: file.lines,
+        methods: file.methods,
+        extension: ext,
+        color: file.color,
+        glowColor: file.glowColor,
+        badge: file.badge,
+        category: file.category,
+        districtName: file.districtName,
+        buildingType: geom.buildingType,
+        isGodObject: geom.isGodObject,
+        position: [lot.x, 0, lot.z],
+        width: geom.width,
+        depth: geom.depth,
+        height: geom.height,
+        tiers: geom.tiers,
+        hasSpire: geom.hasSpire,
+        spireHeight: geom.spireHeight,
+        hasHelipad: geom.hasHelipad,
+        absolutePosition: [absX, 0, absZ]
+      };
+
+      blockBuildings.push(building);
+      allBuildings.push(building);
+      flatNodes.set(building.id, building);
+    });
+
+    blocks.push({
+      id: `block-${slot.gx}-${slot.gz}`,
+      gridX: slot.gx,
+      gridZ: slot.gz,
+      center: [blockCenterX, 0, blockCenterZ],
+      width: BLOCK_SIZE,
+      depth: BLOCK_SIZE,
+      category: dominantCategory,
+      districtName: dominantDistrict,
+      districtColor: dominantColor,
+      buildings: blockBuildings
+    });
+  }
+
+  // 5. Compute category district summaries
+  const districtCategories: DistrictCategory[] = ['frontend', 'core-api', 'database', 'workers', 'config', 'tests'];
+  const districtMetaList: DistrictMeta[] = [];
+
+  districtCategories.forEach((catKey) => {
+    const catFiles = allBuildings.filter((b) => b.category === catKey);
+    if (catFiles.length === 0) return;
+
+    // Center of this category's buildings
+    let sumX = 0, sumZ = 0;
+    catFiles.forEach((b) => {
+      sumX += b.absolutePosition[0];
+      sumZ += b.absolutePosition[2];
+    });
+    const avgX = sumX / catFiles.length;
+    const avgZ = sumZ / catFiles.length;
+
+    const first = catFiles[0];
+    districtMetaList.push({
+      key: catKey,
+      name: first.districtName.split('(')[0].trim(),
+      subname: first.districtName.includes('(') ? first.districtName.split('(')[1].replace(')', '').trim() : first.badge,
+      color: first.color,
+      icon: catKey === 'database' ? 'database' : catKey === 'core-api' ? 'account_balance' : catKey === 'workers' ? 'memory' : catKey === 'tests' ? 'verified_user' : 'devices',
+      count: catFiles.length,
+      totalLoc: catFiles.reduce((acc, f) => acc + f.lines, 0),
+      center: [avgX, 0, avgZ]
     });
   });
 
-  // Sort each bucket by LOC descending so the tallest skyscrapers crown the center of their district
-  Object.keys(categoryBuckets).forEach((k) => {
-    categoryBuckets[k as DistrictCategory].sort((a, b) => b.lines - a.lines);
-  });
-
-  // 3. Sector Coordinate Allocations for Districts in Urban Grid
-  // Frontend: Sector NW (negative X, negative Z)
-  // Core API: Sector NE (positive X, negative Z)
-  // Database: Sector SW (negative X, positive Z)
-  // Workers: Sector SE (positive X, positive Z)
-  // Config & Tests: Central Avenues (X around 0)
-  const sectorAssignments: Record<DistrictCategory, Array<{ gx: number; gz: number }>> = {
-    'frontend': [
-      { gx: -1, gz: -1 }, { gx: -2, gz: -1 }, { gx: -1, gz: -2 }, { gx: -2, gz: -2 },
-      { gx: -3, gz: -1 }, { gx: -3, gz: -2 }, { gx: -1, gz: -3 }, { gx: -2, gz: -3 }, { gx: -3, gz: -3 }
-    ],
-    'core-api': [
-      { gx: 1, gz: -1 }, { gx: 2, gz: -1 }, { gx: 1, gz: -2 }, { gx: 2, gz: -2 },
-      { gx: 3, gz: -1 }, { gx: 3, gz: -2 }, { gx: 1, gz: -3 }, { gx: 2, gz: -3 }, { gx: 3, gz: -3 }
-    ],
-    'database': [
-      { gx: -1, gz: 1 }, { gx: -2, gz: 1 }, { gx: -1, gz: 2 }, { gx: -2, gz: 2 },
-      { gx: -3, gz: 1 }, { gx: -3, gz: 2 }, { gx: -1, gz: 3 }, { gx: -2, gz: 3 }, { gx: -3, gz: 3 }
-    ],
-    'workers': [
-      { gx: 1, gz: 1 }, { gx: 2, gz: 1 }, { gx: 1, gz: 2 }, { gx: 2, gz: 2 },
-      { gx: 3, gz: 1 }, { gx: 3, gz: 2 }, { gx: 1, gz: 3 }, { gx: 2, gz: 3 }, { gx: 3, gz: 3 }
-    ],
-    'config': [
-      { gx: 0, gz: 0 }, { gx: 0, gz: -1 }, { gx: 0, gz: 1 }, { gx: 0, gz: -2 }, { gx: 0, gz: 2 }
-    ],
-    'tests': [
-      { gx: 0, gz: -3 }, { gx: 0, gz: 3 }, { gx: -1, gz: 0 }, { gx: 1, gz: 0 }
-    ]
-  };
-
-  // Subgrid lot positioning inside a block (22x22 usable lot)
-  function getSubgridPositions(count: number): Array<{ x: number; z: number; lotW: number; lotD: number }> {
-    if (count <= 1) return [{ x: 0, z: 0, lotW: 16, lotD: 16 }];
-    if (count === 2) {
-      return [
-        { x: -5.5, z: 0, lotW: 10, lotD: 12 },
-        { x: 5.5, z: 0, lotW: 10, lotD: 12 }
-      ];
-    }
-    if (count === 3) {
-      return [
-        { x: -5.5, z: -5.5, lotW: 9.5, lotD: 9.5 },
-        { x: 5.5, z: -5.5, lotW: 9.5, lotD: 9.5 },
-        { x: 0, z: 5.5, lotW: 11, lotD: 9.5 }
-      ];
-    }
-    if (count === 4) {
-      return [
-        { x: -5.5, z: -5.5, lotW: 9.5, lotD: 9.5 },
-        { x: 5.5, z: -5.5, lotW: 9.5, lotD: 9.5 },
-        { x: -5.5, z: 5.5, lotW: 9.5, lotD: 9.5 },
-        { x: 5.5, z: 5.5, lotW: 9.5, lotD: 9.5 }
-      ];
-    }
-    // 5 or 6 buildings per block
-    return [
-      { x: -6.0, z: -6.5, lotW: 8.5, lotD: 8.5 },
-      { x: 6.0, z: -6.5, lotW: 8.5, lotD: 8.5 },
-      { x: -6.0, z: 0, lotW: 8.5, lotD: 7.5 },
-      { x: 6.0, z: 0, lotW: 8.5, lotD: 7.5 },
-      { x: 0, z: 6.5, lotW: 10, lotD: 8.0 }
-    ];
-  }
-
-  const districtSummaries: DistrictMeta[] = [
-    {
-      key: 'frontend',
-      name: 'Distrito Comercial',
-      subname: 'Frontend & UI Components',
-      color: '#00f5ff',
-      plateColor: '#002830',
-      icon: 'devices',
-      center: [-1.5 * BLOCK_PITCH, 0, -1.5 * BLOCK_PITCH],
-      bounds: { minX: -3 * BLOCK_PITCH, maxX: -BLOCK_PITCH, minZ: -3 * BLOCK_PITCH, maxZ: -BLOCK_PITCH },
-      count: categoryBuckets.frontend.length,
-      totalLoc: categoryBuckets.frontend.reduce((acc, f) => acc + f.lines, 0)
-    },
-    {
-      key: 'core-api',
-      name: 'Distrito Financiero',
-      subname: 'Core Logic, API & Auth',
-      color: '#f59e0b',
-      plateColor: '#302000',
-      icon: 'account_balance',
-      center: [1.5 * BLOCK_PITCH, 0, -1.5 * BLOCK_PITCH],
-      bounds: { minX: BLOCK_PITCH, maxX: 3 * BLOCK_PITCH, minZ: -3 * BLOCK_PITCH, maxZ: -BLOCK_PITCH },
-      count: categoryBuckets['core-api'].length,
-      totalLoc: categoryBuckets['core-api'].reduce((acc, f) => acc + f.lines, 0)
-    },
-    {
-      key: 'database',
-      name: 'Distrito Industrial',
-      subname: 'Database, Models & Storage',
-      color: '#10b981',
-      plateColor: '#002b1b',
-      icon: 'database',
-      center: [-1.5 * BLOCK_PITCH, 0, 1.5 * BLOCK_PITCH],
-      bounds: { minX: -3 * BLOCK_PITCH, maxX: -BLOCK_PITCH, minZ: BLOCK_PITCH, maxZ: 3 * BLOCK_PITCH },
-      count: categoryBuckets.database.length,
-      totalLoc: categoryBuckets.database.reduce((acc, f) => acc + f.lines, 0)
-    },
-    {
-      key: 'workers',
-      name: 'Distrito Gubernamental',
-      subname: 'Workers, Queues & Daemons',
-      color: '#a855f7',
-      plateColor: '#280036',
-      icon: 'memory',
-      center: [1.5 * BLOCK_PITCH, 0, 1.5 * BLOCK_PITCH],
-      bounds: { minX: BLOCK_PITCH, maxX: 3 * BLOCK_PITCH, minZ: BLOCK_PITCH, maxZ: 3 * BLOCK_PITCH },
-      count: categoryBuckets.workers.length,
-      totalLoc: categoryBuckets.workers.reduce((acc, f) => acc + f.lines, 0)
-    },
-    {
-      key: 'config',
-      name: 'Distrito Infraestructura',
-      subname: 'Config, Build & Devops',
-      color: '#64748b',
-      plateColor: '#1e2430',
-      icon: 'settings',
-      center: [0, 0, 0],
-      bounds: { minX: -BLOCK_PITCH, maxX: BLOCK_PITCH, minZ: -2 * BLOCK_PITCH, maxZ: 2 * BLOCK_PITCH },
-      count: categoryBuckets.config.length,
-      totalLoc: categoryBuckets.config.reduce((acc, f) => acc + f.lines, 0)
-    },
-    {
-      key: 'tests',
-      name: 'Distrito Seguridad',
-      subname: 'Testing & Quality Assurance',
-      color: '#ec4899',
-      plateColor: '#380020',
-      icon: 'verified_user',
-      center: [0, 0, 3 * BLOCK_PITCH],
-      bounds: { minX: -BLOCK_PITCH, maxX: BLOCK_PITCH, minZ: 2 * BLOCK_PITCH, maxZ: 3 * BLOCK_PITCH },
-      count: categoryBuckets.tests.length,
-      totalLoc: categoryBuckets.tests.reduce((acc, f) => acc + f.lines, 0)
-    }
-  ];
-
-  // 4. Distribute files into blocks for each category
-  // EVERY building is functional and linked to a real file!
-  Object.keys(categoryBuckets).forEach((catKey) => {
-    const category = catKey as DistrictCategory;
-    const files = categoryBuckets[category];
-    if (files.length === 0) return;
-
-    const slots = sectorAssignments[category] || sectorAssignments['config'];
-    // Group files into chunks of 2 to 4 per block
-    const filesPerBlock = Math.max(2, Math.min(4, Math.ceil(files.length / slots.length)));
-
-    let slotIdx = 0;
-    for (let i = 0; i < files.length; i += filesPerBlock) {
-      const slot = slots[slotIdx % slots.length];
-      const chunk = files.slice(i, i + filesPerBlock);
-
-      const blockCenterX = slot.gx * BLOCK_PITCH;
-      const blockCenterZ = slot.gz * BLOCK_PITCH;
-      const subLots = getSubgridPositions(chunk.length);
-
-      const blockBuildings: BuildingData[] = [];
-
-      chunk.forEach((file, fIdx) => {
-        const lot = subLots[fIdx] || subLots[0];
-        const isGod = file.name.includes('GOD OBJECT') || file.lines > 1200;
-
-        const geom = generateBuildingTiers(file.lines, file.size, lot.lotW, lot.lotD, isGod);
-        const absX = blockCenterX + lot.x;
-        const absZ = blockCenterZ + lot.z;
-
-        const ext = file.name.includes('.') ? file.name.split('.').pop() || '' : '';
-
-        const building: BuildingData = {
-          id: file.path,
-          name: file.name,
-          path: file.path,
-          size: file.size,
-          lines: file.lines,
-          methods: file.methods,
-          extension: ext,
-          color: file.color,
-          category: file.category,
-          districtName: file.districtName,
-          buildingType: geom.buildingType,
-          isGodObject: geom.isGodObject,
-          position: [lot.x, 0, lot.z],
-          width: geom.width,
-          depth: geom.depth,
-          height: geom.height,
-          tiers: geom.tiers,
-          hasSpire: geom.hasSpire,
-          spireHeight: geom.spireHeight,
-          hasHelipad: geom.hasHelipad,
-          absolutePosition: [absX, 0, absZ]
-        };
-
-        blockBuildings.push(building);
-        allBuildings.push(building);
-        flatNodes.set(building.id, building);
-      });
-
-      const distMeta = districtSummaries.find((d) => d.key === category)!;
-
-      blocks.push({
-        id: `block-${slot.gx}-${slot.gz}-${slotIdx}`,
-        gridX: slot.gx,
-        gridZ: slot.gz,
-        center: [blockCenterX, 0, blockCenterZ],
-        width: BLOCK_SIZE,
-        depth: BLOCK_SIZE,
-        category,
-        districtName: distMeta.name,
-        districtColor: distMeta.color,
-        buildings: blockBuildings
-      });
-
-      slotIdx++;
-    }
-  });
-
-  // Calculate avenue centerlines for traffic
+  // Calculate compact avenue lines covering the contiguous city + 1 margin block
   const avenueXList: number[] = [];
   const avenueZList: number[] = [];
-  for (let i = -4; i <= 4; i++) {
+  for (let i = minGx - 1; i <= maxGx + 2; i++) {
     avenueXList.push((i - 0.5) * BLOCK_PITCH);
-    avenueZList.push((i - 0.5) * BLOCK_PITCH);
   }
+  for (let j = minGz - 1; j <= maxGz + 2; j++) {
+    avenueZList.push((j - 0.5) * BLOCK_PITCH);
+  }
+
+  const cityWidth = (maxGx - minGx + 3) * BLOCK_PITCH;
+  const cityDepth = (maxGz - minGz + 3) * BLOCK_PITCH;
 
   return {
     blocks,
     allBuildings,
     flatNodes,
-    districts: districtSummaries,
+    districts: districtMetaList,
     totalLines,
     totalClasses: allBuildings.length,
     avenueXList,
     avenueZList,
-    bounds: {
-      minX: -4 * BLOCK_PITCH,
-      maxX: 4 * BLOCK_PITCH,
-      minZ: -4 * BLOCK_PITCH,
-      maxZ: 4 * BLOCK_PITCH
-    }
+    cityWidth,
+    cityDepth
   };
 }
