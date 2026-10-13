@@ -86,12 +86,17 @@ export function getBuildingColor(filePath: string, fileName: string): {
   category: DistrictCategory;
   districtName: string;
 } {
-  const p = filePath.toLowerCase();
-  const n = fileName.toLowerCase();
-  const ext = n.includes('.') ? n.split('.').pop() || '' : '';
+  const cleanPath = filePath.replace(/\\/g, '/');
+  const name = fileName.toLowerCase();
+  const ext = name.includes('.') ? name.split('.').pop() || '' : '';
+
+  // Extract relative directory segments (ignore parent folders like OneDrive, Documentos, Modelaje3dciudad, Modelado3d)
+  const allSegments = cleanPath.toLowerCase().split('/').filter(Boolean);
+  const actualFileName = allSegments[allSegments.length - 1] || name;
+  const dirSegments = allSegments.slice(Math.max(0, allSegments.length - 4), allSegments.length - 1);
 
   // 1. God Object / High Complexity Monolith -> Vivid Crimson Red
-  if (n.includes('god object') || p.includes('godobject') || n.includes('monolith')) {
+  if (name.includes('god object') || name.includes('godobject') || name.includes('monolith')) {
     return {
       color: '#ef4444',
       glowColor: '#ff0055',
@@ -101,14 +106,13 @@ export function getBuildingColor(filePath: string, fileName: string): {
     };
   }
 
-  // 2. Tests & QA -> Hot Pink / Magenta
+  // 2. Tests & QA (Strict check on filename or test directories)
   if (
-    p.includes('test') ||
-    p.includes('spec') ||
-    p.includes('__tests__') ||
-    p.includes('cypress') ||
-    n.includes('.test.') ||
-    n.includes('.spec.')
+    actualFileName.includes('.test.') ||
+    actualFileName.includes('.spec.') ||
+    actualFileName.endsWith('_test.py') ||
+    actualFileName.endsWith('_test.go') ||
+    dirSegments.some(s => s === 'test' || s === 'tests' || s === '__tests__' || s === 'spec' || s === 'specs' || s === 'cypress')
   ) {
     return {
       color: '#ec4899',
@@ -119,18 +123,69 @@ export function getBuildingColor(filePath: string, fileName: string): {
     };
   }
 
-  // 3. Database, Models & SQL -> Vibrant Emerald Green
+  // 3. Configuration, DevOps, Environment & Build Manifests -> Crisp Ice White / Slate
   if (
-    p.includes('db') ||
-    p.includes('database') ||
-    p.includes('model') ||
-    p.includes('schema') ||
-    p.includes('migration') ||
-    p.includes('sql') ||
-    p.includes('prisma') ||
-    p.includes('redis') ||
-    p.includes('postgres') ||
-    ['sql', 'prisma'].includes(ext)
+    ['json', 'yaml', 'yml', 'toml', 'env', 'md', 'lock', 'xml'].includes(ext) ||
+    actualFileName.startsWith('vite.config') ||
+    actualFileName.startsWith('package') ||
+    actualFileName.startsWith('tsconfig') ||
+    actualFileName.startsWith('tailwind.config') ||
+    actualFileName.startsWith('postcss.config') ||
+    actualFileName.startsWith('docker') ||
+    actualFileName.startsWith('.env')
+  ) {
+    return {
+      color: '#e2e8f0',
+      glowColor: '#94a3b8',
+      badge: 'CONFIG / BUILD',
+      category: 'config',
+      districtName: 'Distrito Infraestructura (Config)'
+    };
+  }
+
+  // 4. React / Vue / Svelte UI Components (.tsx, .jsx, .vue, .svelte) -> Bright Neon Cyan
+  if (['tsx', 'jsx', 'vue', 'svelte'].includes(ext)) {
+    return {
+      color: '#00f5ff',
+      glowColor: '#63f7ff',
+      badge: ext.toUpperCase() + ' // UI',
+      category: 'frontend',
+      districtName: 'Distrito Comercial (Frontend UI)'
+    };
+  }
+
+  // 5. HTML Views & Standalone Prototypes (.html) -> Warm Vivid Orange
+  if (ext === 'html') {
+    return {
+      color: '#f97316',
+      glowColor: '#fb923c',
+      badge: 'HTML // VISTA',
+      category: 'frontend',
+      districtName: 'Distrito Vistas & UI (HTML)'
+    };
+  }
+
+  // 6. CSS / Stylesheets & Design Tokens (.css, .scss, .sass, .less) -> Electric Purple
+  if (['css', 'scss', 'sass', 'less'].includes(ext)) {
+    return {
+      color: '#a855f7',
+      glowColor: '#c084fc',
+      badge: 'ESTILOS / CSS',
+      category: 'frontend',
+      districtName: 'Distrito Diseño & Estilos'
+    };
+  }
+
+  // 7. Database, SQL & ORM Models (Strict check on extension or db/models folder)
+  // WILL NOT MATCH "Modelado3d" or "Modelaje3dciudad"!
+  if (
+    ['sql', 'prisma'].includes(ext) ||
+    actualFileName.endsWith('.model.ts') ||
+    actualFileName.endsWith('.model.js') ||
+    actualFileName.endsWith('.entity.ts') ||
+    actualFileName.endsWith('_model.py') ||
+    actualFileName.includes('migration') ||
+    dirSegments.some(s => s === 'db' || s === 'database' || s === 'models' || s === 'migrations' || s === 'entities' || s === 'schemas')
   ) {
     return {
       color: '#10b981',
@@ -141,51 +196,45 @@ export function getBuildingColor(filePath: string, fileName: string): {
     };
   }
 
-  // 4. Workers, Queues, Daemons & Low-Level -> Royal Violet
+  // 8. Workers, Daemons, Shell, Native & Electron Runtime -> Royal Violet
   if (
-    p.includes('worker') ||
-    p.includes('job') ||
-    p.includes('queue') ||
-    p.includes('celery') ||
-    p.includes('daemon') ||
-    p.includes('cron') ||
-    p.includes('engine') ||
-    ['cpp', 'rs', 'go', 'sh', 'bash'].includes(ext)
+    ['cpp', 'rs', 'go', 'sh', 'ps1', 'cjs'].includes(ext) ||
+    dirSegments.some(s => s === 'electron' || s === 'workers' || s === 'daemon' || s === 'jobs' || s === 'tasks') ||
+    actualFileName.includes('worker') ||
+    actualFileName.includes('daemon')
   ) {
     return {
-      color: '#a855f7',
-      glowColor: '#c084fc',
-      badge: 'WORKER / RUNTIME',
+      color: '#8b5cf6',
+      glowColor: '#a78bfa',
+      badge: 'RUNTIME / WORKER',
       category: 'workers',
       districtName: 'Distrito Gubernamental (Workers)'
     };
   }
 
-  // 5. TypeScript -> Bright Neon Cyan
-  if (ext === 'ts' || ext === 'tsx') {
-    const isUI = p.includes('component') || p.includes('view') || p.includes('page') || ext === 'tsx';
+  // 9. Core TypeScript Logic & APIs (.ts) -> Deep Sapphire Blue
+  if (ext === 'ts') {
     return {
-      color: '#00f5ff',
-      glowColor: '#63f7ff',
-      badge: 'TYPESCRIPT',
-      category: isUI ? 'frontend' : 'core-api',
-      districtName: isUI ? 'Distrito Comercial (Frontend)' : 'Distrito Financiero (Core API)'
+      color: '#3b82f6',
+      glowColor: '#60a5fa',
+      badge: 'TYPESCRIPT CORE',
+      category: 'core-api',
+      districtName: 'Distrito Financiero (Core API)'
     };
   }
 
-  // 6. JavaScript -> Warm Amber / Gold
-  if (ext === 'js' || ext === 'jsx' || ext === 'mjs') {
-    const isUI = p.includes('component') || p.includes('view') || ext === 'jsx';
+  // 10. JavaScript Logic (.js, .mjs) -> Warm Amber / Gold
+  if (ext === 'js' || ext === 'mjs') {
     return {
       color: '#f59e0b',
       glowColor: '#fbbf24',
       badge: 'JAVASCRIPT',
-      category: isUI ? 'frontend' : 'core-api',
-      districtName: isUI ? 'Distrito Comercial (Frontend)' : 'Distrito Financiero (Core API)'
+      category: 'core-api',
+      districtName: 'Distrito Financiero (Core API)'
     };
   }
 
-  // 7. Python -> Deep Sapphire Blue
+  // 11. Python (.py) -> Deep Sapphire Blue
   if (ext === 'py') {
     return {
       color: '#3b82f6',
@@ -196,42 +245,14 @@ export function getBuildingColor(filePath: string, fileName: string): {
     };
   }
 
-  // 8. Java, Kotlin, Rust -> Bright Coral Orange
-  if (['java', 'kt', 'rs'].includes(ext)) {
+  // 12. Media & Vector Assets (.svg, .png, .jpg) -> Rose Pink
+  if (['svg', 'png', 'jpg', 'ico', 'webp'].includes(ext)) {
     return {
-      color: '#f97316',
-      glowColor: '#fb923c',
-      badge: ext.toUpperCase(),
-      category: 'core-api',
-      districtName: 'Distrito Financiero (Core API)'
-    };
-  }
-
-  // 9. Styles & Markup (CSS, HTML, Vue, Svelte) -> Electric Purple
-  if (['css', 'scss', 'html', 'vue', 'svelte'].includes(ext)) {
-    return {
-      color: '#8b5cf6',
-      glowColor: '#a78bfa',
-      badge: ext.toUpperCase(),
+      color: '#f43f5e',
+      glowColor: '#fb7185',
+      badge: 'ASSET / MEDIA',
       category: 'frontend',
-      districtName: 'Distrito Comercial (Frontend)'
-    };
-  }
-
-  // 10. Config, Build & Infrastructure -> Crisp Ice White / Slate
-  if (
-    ['json', 'yaml', 'yml', 'toml', 'env', 'md', 'xml'].includes(ext) ||
-    n.startsWith('vite') ||
-    n.startsWith('package') ||
-    n.startsWith('tsconfig') ||
-    n.startsWith('docker')
-  ) {
-    return {
-      color: '#e2e8f0',
-      glowColor: '#94a3b8',
-      badge: 'CONFIG',
-      category: 'config',
-      districtName: 'Distrito Infraestructura (Config)'
+      districtName: 'Distrito Diseño & Assets'
     };
   }
 
@@ -240,8 +261,8 @@ export function getBuildingColor(filePath: string, fileName: string): {
     color: '#06b6d4',
     glowColor: '#22d3ee',
     badge: ext.toUpperCase() || 'CODE',
-    category: 'frontend',
-    districtName: 'Distrito Comercial (Frontend)'
+    category: 'core-api',
+    districtName: 'Distrito Financiero (Core API)'
   };
 }
 
