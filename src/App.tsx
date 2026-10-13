@@ -4,6 +4,7 @@ import { OrbitControls, Edges, Text } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { cloneRepo, parseLocalRepo, readFileContent, writeFileContent } from './localGitApi';
+import { fetchGithubRepoTree } from './githubApi';
 import type { FileNode } from './githubApi';
 import { TrafficSystem } from './Traffic';
 import type { TrafficEvent } from './Traffic';
@@ -11,11 +12,19 @@ import {
   buildCompleteCity, 
   BLOCK_SIZE, 
   BLOCK_PITCH, 
-  SIDEWALK_HEIGHT, 
-  GRID_RADIUS 
+  SIDEWALK_HEIGHT 
 } from './cityEngine';
-import type { BuildingData, CityBlockData, CompleteCityModel } from './cityEngine';
-import { Rocket, CheckCircle2, X, Search, Loader2, Activity, Zap, Layers } from 'lucide-react';
+import type { BuildingData, CityBlockData, CompleteCityModel, DistrictMeta, DistrictCategory } from './cityEngine';
+import { 
+  Rocket, 
+  CheckCircle2, 
+  X, 
+  Search, 
+  Loader2, 
+  Activity, 
+  Zap, 
+  Filter 
+} from 'lucide-react';
 
 // --- Procedural Window Texture Cache ---
 let darkWindowTex: THREE.CanvasTexture | null = null;
@@ -55,7 +64,6 @@ const getWindowTexture = (isDark: boolean) => {
       ctx.fillStyle = '#f8fafc';
       ctx.fillRect(0, 0, 128, 128);
 
-      // Subtle architectural window grid for light mode
       for (let y = 6; y < 128; y += 14) {
         for (let x = 6; x < 128; x += 12) {
           ctx.fillStyle = '#cbd5e1';
@@ -79,6 +87,7 @@ function ArchitecturalBuilding({
   data,
   isSelected,
   isHovered,
+  isDimmed,
   theme,
   onClick,
   onPointerOver,
@@ -87,6 +96,7 @@ function ArchitecturalBuilding({
   data: BuildingData;
   isSelected: boolean;
   isHovered: boolean;
+  isDimmed: boolean;
   theme: 'dark' | 'light';
   onClick: () => void;
   onPointerOver: () => void;
@@ -98,29 +108,34 @@ function ArchitecturalBuilding({
   const edgeColor = useMemo(() => {
     if (isSelected) return isDark ? '#ffffff' : '#0284c7';
     if (isHovered) return isDark ? '#63f7ff' : '#0284c7';
-    if (isDark) return data.isCode ? data.color : '#334155';
-    return data.isCode ? '#475569' : '#94a3b8';
-  }, [isSelected, isHovered, isDark, data.isCode, data.color]);
+    if (isDimmed) return '#1e293b';
+    if (isDark) return data.color;
+    return '#64748b';
+  }, [isSelected, isHovered, isDimmed, isDark, data.color]);
 
   const buildingMaterial = useMemo(() => {
     if (isDark) {
       return new THREE.MeshStandardMaterial({
-        color: data.isCode ? '#0b101c' : '#070a12',
+        color: isDimmed ? '#04060a' : '#090e18',
         metalness: 0.85,
         roughness: 0.25,
         emissiveMap: tex,
-        emissive: data.isCode ? new THREE.Color(data.color) : new THREE.Color('#38bdf8'),
-        emissiveIntensity: isSelected ? 2.5 : isHovered ? 2.0 : data.isCode ? 1.4 : 0.6
+        emissive: new THREE.Color(data.color),
+        emissiveIntensity: isDimmed ? 0.2 : isSelected ? 2.6 : isHovered ? 2.1 : 1.4,
+        transparent: isDimmed,
+        opacity: isDimmed ? 0.4 : 1.0
       });
     } else {
       return new THREE.MeshStandardMaterial({
-        color: isSelected ? '#e0f2fe' : '#ffffff',
+        color: isDimmed ? '#cbd5e1' : isSelected ? '#e0f2fe' : '#ffffff',
         metalness: 0.05,
         roughness: 0.35,
-        map: tex
+        map: tex,
+        transparent: isDimmed,
+        opacity: isDimmed ? 0.35 : 1.0
       });
     }
-  }, [isDark, isSelected, isHovered, data.isCode, data.color, tex]);
+  }, [isDark, isSelected, isHovered, isDimmed, data.color, tex]);
 
   return (
     <group
@@ -147,7 +162,7 @@ function ArchitecturalBuilding({
         </mesh>
       ))}
 
-      {/* Rooftop Spire / Antenna for Skyscrapers & God-Objects */}
+      {/* Rooftop Spire / Antenna */}
       {data.hasSpire && (
         <group position={[0, data.height + data.spireHeight / 2, 0]}>
           <mesh castShadow>
@@ -158,9 +173,8 @@ function ArchitecturalBuilding({
               emissiveIntensity={isDark ? 3.0 : 0}
             />
           </mesh>
-          {/* Spire Tip Beacon */}
           <mesh position={[0, data.spireHeight / 2 + 0.2, 0]}>
-            <sphereGeometry args={[0.3, 12, 12]} />
+            <sphereGeometry args={[0.35, 12, 12]} />
             <meshBasicMaterial color={data.isGodObject ? '#ef4444' : isDark ? '#ffffff' : '#dc2626'} />
           </mesh>
         </group>
@@ -170,24 +184,40 @@ function ArchitecturalBuilding({
       {data.isGodObject && isDark && (
         <mesh position={[0, data.height + 8, 0]}>
           <cylinderGeometry args={[data.width * 0.7, data.width * 0.7, 0.4, 16]} />
-          <meshBasicMaterial color="#ef4444" wireframe transparent opacity={0.6} />
+          <meshBasicMaterial color="#ef4444" wireframe transparent opacity={0.65} />
         </mesh>
       )}
 
-      {/* Selected Node Vertical Hologram Beacon */}
+      {/* Floating HUD Badge on Hover */}
+      {isHovered && !isSelected && (
+        <group position={[0, data.height + (data.hasSpire ? data.spireHeight : 0) + 3, 0]}>
+          <Text
+            fontSize={1.2}
+            color={isDark ? '#00f5ff' : '#0284c7'}
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.1}
+            outlineColor={isDark ? '#000000' : '#ffffff'}
+          >
+            {`${data.name} [${data.lines} LOC]`}
+          </Text>
+        </group>
+      )}
+
+      {/* Selected Node Vertical Hologram Laser Beacon */}
       {isSelected && (
         <>
-          <mesh position={[0, (data.height + 60) / 2, 0]}>
-            <cylinderGeometry args={[0.3, 1.2, data.height + 60, 16]} />
-            <meshBasicMaterial color={isDark ? '#00f5ff' : '#0284c7'} transparent opacity={0.25} />
+          <mesh position={[0, (data.height + 70) / 2, 0]}>
+            <cylinderGeometry args={[0.3, 1.4, data.height + 70, 16]} />
+            <meshBasicMaterial color={isDark ? '#00f5ff' : '#0284c7'} transparent opacity={0.3} />
           </mesh>
           <Text
-            position={[0, data.height + (data.hasSpire ? data.spireHeight : 0) + 3, 0]}
-            fontSize={1.4}
+            position={[0, data.height + (data.hasSpire ? data.spireHeight : 0) + 4, 0]}
+            fontSize={1.6}
             color={isDark ? '#ffffff' : '#0f172a'}
             anchorX="center"
             anchorY="middle"
-            outlineWidth={0.12}
+            outlineWidth={0.15}
             outlineColor={isDark ? '#000000' : '#ffffff'}
           >
             {data.name}
@@ -198,11 +228,12 @@ function ArchitecturalBuilding({
   );
 }
 
-// --- City Block (Plinth + Buildings) ---
+// --- City Block Component ---
 function CityBlock({
   block,
   selectedId,
   hoveredId,
+  activeFilter,
   theme,
   onSelectNode,
   onHoverNode
@@ -210,11 +241,13 @@ function CityBlock({
   block: CityBlockData;
   selectedId: string | null;
   hoveredId: string | null;
+  activeFilter: DistrictCategory | 'all';
   theme: 'dark' | 'light';
   onSelectNode: (id: string) => void;
   onHoverNode: (id: string | null) => void;
 }) {
   const isDark = theme === 'dark';
+  const isDimmed = activeFilter !== 'all' && block.category !== activeFilter;
 
   return (
     <group position={block.center}>
@@ -222,29 +255,65 @@ function CityBlock({
       <mesh position={[0, SIDEWALK_HEIGHT / 2, 0]} receiveShadow>
         <boxGeometry args={[BLOCK_SIZE, SIDEWALK_HEIGHT, BLOCK_SIZE]} />
         <meshStandardMaterial
-          color={isDark ? (block.isCodeDistrict ? '#111726' : '#0c0f1a') : (block.isCodeDistrict ? '#e2e8f0' : '#cbd5e1')}
+          color={isDark ? '#0e1422' : '#e2e8f0'}
           roughness={0.8}
           metalness={0.1}
+          transparent={isDimmed}
+          opacity={isDimmed ? 0.3 : 1.0}
         />
         <Edges
-          linewidth={1}
+          linewidth={1.2}
           threshold={15}
-          color={isDark ? (block.isCodeDistrict ? '#00f5ff' : '#1e293b') : '#94a3b8'}
+          color={isDark ? block.districtColor : '#94a3b8'}
         />
       </mesh>
 
-      {/* Buildings Inside Block */}
+      {/* Buildings in this block */}
       {block.buildings.map((b) => (
         <ArchitecturalBuilding
           key={b.id}
           data={b}
           isSelected={selectedId === b.id}
           isHovered={hoveredId === b.id}
+          isDimmed={isDimmed}
           theme={theme}
           onClick={() => onSelectNode(b.id)}
           onPointerOver={() => onHoverNode(b.id)}
           onPointerOut={() => onHoverNode(null)}
         />
+      ))}
+    </group>
+  );
+}
+
+// --- Floating 3D District Hologram Billboards ---
+function DistrictLabels({ districts, theme }: { districts: DistrictMeta[]; theme: 'dark' | 'light' }) {
+  const isDark = theme === 'dark';
+  return (
+    <group>
+      {districts.map((d) => (
+        <group key={d.key} position={[d.center[0], 28, d.center[2]]}>
+          {/* Glowing District Title Banner */}
+          <Text
+            fontSize={2.4}
+            color={isDark ? d.color : '#0f172a'}
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.15}
+            outlineColor={isDark ? '#000000' : '#ffffff'}
+          >
+            {`// ${d.name.toUpperCase()}`}
+          </Text>
+          <Text
+            position={[0, -2.5, 0]}
+            fontSize={1.2}
+            color={isDark ? '#94a3b8' : '#475569'}
+            anchorX="center"
+            anchorY="middle"
+          >
+            {`${d.subname} • ${d.count} ARCHIVOS • ${d.totalLoc} LOC`}
+          </Text>
+        </group>
       ))}
     </group>
   );
@@ -259,20 +328,20 @@ function UrbanStreetGrid({ theme }: { theme: 'dark' | 'light' }) {
     const crosses: Array<{ pos: [number, number, number]; rotY: number }> = [];
 
     const coords: number[] = [];
-    for (let i = -GRID_RADIUS; i <= GRID_RADIUS + 1; i++) {
+    for (let i = -4; i <= 4; i++) {
       coords.push((i - 0.5) * BLOCK_PITCH);
     }
 
     // Avenues along X
     coords.forEach((avZ) => {
-      for (let x = -GRID_RADIUS * BLOCK_PITCH; x <= GRID_RADIUS * BLOCK_PITCH; x += 6) {
+      for (let x = -4 * BLOCK_PITCH; x <= 4 * BLOCK_PITCH; x += 6) {
         dividers.push({ pos: [x, 0.06, avZ], rotY: 0 });
       }
     });
 
     // Avenues along Z
     coords.forEach((avX) => {
-      for (let z = -GRID_RADIUS * BLOCK_PITCH; z <= GRID_RADIUS * BLOCK_PITCH; z += 6) {
+      for (let z = -4 * BLOCK_PITCH; z <= 4 * BLOCK_PITCH; z += 6) {
         dividers.push({ pos: [avX, 0.06, z], rotY: Math.PI / 2 });
       }
     });
@@ -294,9 +363,9 @@ function UrbanStreetGrid({ theme }: { theme: 'dark' | 'light' }) {
     <group>
       {/* Infinite City Ground Asphalt Plane */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[600, 600]} />
+        <planeGeometry args={[700, 700]} />
         <meshStandardMaterial
-          color={isDark ? '#060811' : '#1e293b'}
+          color={isDark ? '#05070f' : '#1e293b'}
           roughness={0.9}
           metalness={0.1}
         />
@@ -338,6 +407,7 @@ export default function App() {
   const [treeData, setTreeData] = useState<FileNode | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<DistrictCategory | 'all'>('all');
   
   const [trafficEvents, setTrafficEvents] = useState<TrafficEvent[]>([]);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -360,36 +430,67 @@ export default function App() {
     else document.documentElement.classList.remove('dark');
   }, [theme]);
 
-  // Clone & Parse local repo
+  // Clone or fetch ANY repository URL
   const loadRepo = async () => {
     setLoading(true);
     setFixApplied(false);
     setShowAiModal(false);
+    setProgressMsg('Iniciando carga de repositorio...');
+
     try {
-      const parts = repoUrl.split('/');
-      const repoName = parts[parts.length - 1].replace('.git', '') || 'repo';
-      const os = window.require('os');
-      const path = window.require('path');
-      const destPath = path.join(os.tmpdir(), `codecity_${repoName}_${Date.now()}`);
-      
-      setProgressMsg('Cloning repo...');
-      await cloneRepo(repoUrl, destPath, (msg) => setProgressMsg(msg));
-      
-      setProgressMsg('Parsing AST & Building 3D City...');
-      const { root } = await parseLocalRepo(destPath);
-      setTreeData(root);
-      setSelectedNodeId(null);
-      setTrafficEvents([]);
-      setIsSimulating(false);
-    } catch (err) {
-      console.error('Clone failed:', err);
+      let cleaned = repoUrl.trim().replace(/\.git$/, '');
+      if (cleaned.endsWith('/')) cleaned = cleaned.slice(0, -1);
+
+      const ghMatch = cleaned.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+      const owner = ghMatch ? ghMatch[1] : '';
+      const repoName = ghMatch ? ghMatch[2] : cleaned.split('/').pop() || 'repo';
+
+      let loadedRoot: FileNode | null = null;
+
+      // Try 1: Local Git Clone in Electron
+      if (window.require) {
+        try {
+          const os = window.require('os');
+          const path = window.require('path');
+          const destPath = path.join(os.tmpdir(), `codecity_${repoName}_${Date.now()}`);
+          
+          setProgressMsg(`Clonando ${repoName} en disco local...`);
+          await cloneRepo(repoUrl, destPath, (msg) => setProgressMsg(msg));
+          
+          setProgressMsg('Construyendo AST 3D desde ficheros locales...');
+          const { root } = await parseLocalRepo(destPath);
+          loadedRoot = root;
+        } catch (cloneErr) {
+          console.warn('Local clone failed, falling back to GitHub REST API...', cloneErr);
+        }
+      }
+
+      // Try 2: Fallback to GitHub REST API (Works for ANY public repo in the world without Git!)
+      if (!loadedRoot && owner && repoName) {
+        setProgressMsg(`Consultando AST vía GitHub API (${owner}/${repoName})...`);
+        const { root } = await fetchGithubRepoTree(owner, repoName, 'main');
+        loadedRoot = root;
+      }
+
+      if (loadedRoot) {
+        setTreeData(loadedRoot);
+        setSelectedNodeId(null);
+        setActiveFilter('all');
+        setTrafficEvents([]);
+        setIsSimulating(false);
+      } else {
+        throw new Error('No se pudo acceder al repositorio.');
+      }
+    } catch (err: any) {
+      console.error('Error loading repo:', err);
+      alert(`Error al cargar repositorio: ${err.message || err}`);
     } finally {
       setLoading(false);
       setProgressMsg('');
     }
   };
 
-  // Traffic Simulation Loop (N+1 Bottleneck & HTTP queries)
+  // Traffic Simulation Loop (Cross-district telemetry: Frontend -> API -> DB)
   useEffect(() => {
     if (!isSimulating) return;
 
@@ -397,12 +498,15 @@ export default function App() {
     let events: TrafficEvent[] = [];
     let cycleCount = 0;
 
-    const codeFiles = cityModel.codeBuildings;
+    const codeFiles = cityModel.allBuildings;
     if (codeFiles.length < 2) return;
 
-    const sortedFiles = [...codeFiles].sort((a, b) => b.lines - a.lines);
-    const dbNode = sortedFiles[0];
-    const sourceNode = sortedFiles[1] || sortedFiles[0];
+    // Pick database model and API controller for bottleneck
+    const dbFiles = codeFiles.filter((b) => b.category === 'database');
+    const apiFiles = codeFiles.filter((b) => b.category === 'core-api');
+
+    const dbNode = dbFiles[0] || codeFiles[0];
+    const sourceNode = apiFiles[0] || codeFiles[1];
 
     const loop = () => {
       cycleCount++;
@@ -413,8 +517,8 @@ export default function App() {
           progress: e.progress + (e.status === 'bottleneck' ? 0.003 : 0.01)
         }));
 
-      // Trigger critical N+1 bottleneck stream after ~2.5 seconds
-      if (cycleCount === 150) {
+      // Trigger critical N+1 bottleneck stream between API & DB
+      if (cycleCount === 140) {
         for (let i = 0; i < 40; i++) {
           events.push({
             id: `err-${Date.now()}-${i}`,
@@ -432,8 +536,8 @@ export default function App() {
         }, 2200);
       }
 
-      // Normal ambient telemetry between code buildings
-      if (cycleCount % 35 === 0 && cycleCount < 300) {
+      // Normal inter-district telemetry
+      if (cycleCount % 30 === 0 && cycleCount < 300) {
         const randA = codeFiles[Math.floor(Math.random() * codeFiles.length)];
         const randB = codeFiles[Math.floor(Math.random() * codeFiles.length)];
         if (randA.id !== randB.id) {
@@ -468,8 +572,9 @@ export default function App() {
       setShowAiModal(true);
       setFixApplied(false);
     } catch {
+      // Mock / fallback preview
       setFileContent(
-        `// AST Module: ${selectedNode.name}\nimport { db } from './db';\n\nexport async function getReportData() {\n  const users = await db.query('SELECT * FROM users');\n  // N+1 Critical Bottleneck Query Loop\n  for (const user of users) {\n    user.orders = await db.query('SELECT * FROM orders WHERE user_id = ' + user.id);\n  }\n  return users;\n}`
+        `// AST Module: ${selectedNode.name}\n// Path: ${selectedNode.path}\n// District: ${selectedNode.districtName}\n\nimport { db } from './db';\n\nexport async function handleDataFlow() {\n  const items = await db.query('SELECT * FROM main_table');\n  // N+1 Critical Query Loop Bottleneck\n  for (const item of items) {\n    item.details = await db.query('SELECT * FROM sub_items WHERE parent_id = ' + item.id);\n  }\n  return items;\n}`
       );
       setShowAiModal(true);
       setFixApplied(false);
@@ -526,7 +631,7 @@ export default function App() {
     },
     en: {
       load: 'Load',
-      cloning: progressMsg || 'Cloning...',
+      cloning: progressMsg || 'Clonando...',
       systems: 'Tactical Systems',
       nominal: 'All Nominal',
       astNodes: 'AST Nodes',
@@ -625,11 +730,11 @@ export default function App() {
       </header>
 
       {/* Left Sidebar */}
-      <aside className={`fixed left-0 top-16 bottom-8 w-80 z-30 flex flex-col justify-between py-5 border-r backdrop-blur-xl ${theme === 'dark' ? 'bg-[#0a0d18]/95 border-[#1e293b]' : 'bg-white/95 border-slate-200'} shadow-xl`}>
-        <div className="flex flex-col gap-5 px-5">
+      <aside className={`fixed left-0 top-16 bottom-8 w-80 z-30 flex flex-col justify-between py-4 border-r backdrop-blur-xl ${theme === 'dark' ? 'bg-[#0a0d18]/95 border-[#1e293b]' : 'bg-white/95 border-slate-200'} shadow-xl`}>
+        <div className="flex flex-col gap-4 px-5 overflow-y-auto">
           
           {/* Tactical Status Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-surface-container-highest/20">
+          <div className="flex items-center justify-between pb-2 border-b border-surface-container-highest/20">
             <span className="font-telemetry-label text-xs uppercase font-bold text-outline">
               {t.systems}
             </span>
@@ -640,16 +745,16 @@ export default function App() {
           </div>
 
           {/* Key Metric Cards */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className={`p-3 rounded-lg border ${theme === 'dark' ? 'bg-[#101524] border-[#1e293b]' : 'bg-slate-50 border-slate-200'}`}>
-              <span className="block font-telemetry-label text-[10px] uppercase text-outline mb-1">{t.astNodes}</span>
-              <span className={`font-mono-code text-base font-bold ${theme === 'dark' ? 'text-[#00f5ff]' : 'text-blue-600'}`}>
-                {cityModel.totalClasses} CLASSES
+          <div className="grid grid-cols-2 gap-2">
+            <div className={`p-2.5 rounded-lg border ${theme === 'dark' ? 'bg-[#101524] border-[#1e293b]' : 'bg-slate-50 border-slate-200'}`}>
+              <span className="block font-telemetry-label text-[9px] uppercase text-outline mb-0.5">{t.astNodes}</span>
+              <span className={`font-mono-code text-sm font-bold ${theme === 'dark' ? 'text-[#00f5ff]' : 'text-blue-600'}`}>
+                {cityModel.totalClasses} EDIFICIOS
               </span>
             </div>
-            <div className={`p-3 rounded-lg border ${theme === 'dark' ? 'bg-[#101524] border-[#1e293b]' : 'bg-slate-50 border-slate-200'}`}>
-              <span className="block font-telemetry-label text-[10px] uppercase text-outline mb-1">{t.pcapProbe}</span>
-              <span className={`font-mono-code text-base font-bold ${isSimulating ? 'text-[#ef4444]' : 'text-[#4edea3]'}`}>
+            <div className={`p-2.5 rounded-lg border ${theme === 'dark' ? 'bg-[#101524] border-[#1e293b]' : 'bg-slate-50 border-slate-200'}`}>
+              <span className="block font-telemetry-label text-[9px] uppercase text-outline mb-0.5">{t.pcapProbe}</span>
+              <span className={`font-mono-code text-sm font-bold ${isSimulating ? 'text-[#ef4444]' : 'text-[#4edea3]'}`}>
                 {isSimulating ? t.active : t.idle}
               </span>
             </div>
@@ -664,25 +769,57 @@ export default function App() {
             {isSimulating ? t.stopTraffic : t.simTraffic}
           </button>
 
-          {/* Districts Nav Menu */}
-          <div className="flex flex-col gap-1.5 pt-2">
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border-l-2 border-[#00f5ff]">
-              <Layers className="w-5 h-5 text-[#00f5ff]" />
-              <div className="flex flex-col">
-                <span className="text-xs font-bold">{t.districts}</span>
-                <span className="text-[10px] font-mono-code text-outline">{t.districtsSub}</span>
-              </div>
+          {/* Districts / Category Filter List */}
+          <div className="flex flex-col gap-1.5 pt-1">
+            <div className="flex items-center justify-between pb-1">
+              <span className="text-[10px] font-mono-code uppercase font-bold text-outline flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5 text-[#00f5ff]" />
+                Categorías de Código
+              </span>
+              <button
+                onClick={() => setActiveFilter('all')}
+                className={`text-[9px] font-mono-code uppercase px-2 py-0.5 rounded cursor-pointer ${activeFilter === 'all' ? 'bg-[#00f5ff] text-[#003739] font-bold' : 'text-outline hover:text-white'}`}
+              >
+                Ver Todas
+              </button>
             </div>
+
+            {cityModel.districts.map((d) => (
+              <button
+                key={d.key}
+                onClick={() => setActiveFilter(activeFilter === d.key ? 'all' : d.key)}
+                className={`flex items-center justify-between p-2 rounded-lg border text-left transition-all cursor-pointer ${activeFilter === d.key ? 'bg-primary/15 border-[#00f5ff]' : theme === 'dark' ? 'bg-[#101524] border-[#1e293b] hover:bg-[#151c30]' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }}></span>
+                  <div className="flex flex-col truncate">
+                    <span className="text-xs font-bold truncate leading-tight">{d.name}</span>
+                    <span className="text-[9px] font-mono-code text-outline truncate">{d.subname}</span>
+                  </div>
+                </div>
+                <div className="text-right pl-2">
+                  <span className="font-mono-code text-xs font-bold" style={{ color: d.color }}>{d.count}</span>
+                  <span className="text-[8px] font-mono-code text-outline block">archivos</span>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Selected Node Details & Audit Button */}
-        <div className="px-5">
+        <div className="px-5 pt-3 border-t border-outline/20">
           {selectedNode ? (
-            <div className={`p-4 rounded-xl border flex flex-col gap-3 shadow-lg ${theme === 'dark' ? 'bg-[#111728] border-[#22304d]' : 'bg-blue-50 border-blue-200'}`}>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#00f5ff] animate-ping"></span>
-                <span className="text-[10px] font-mono-code uppercase text-outline">Selected Node</span>
+            <div className={`p-3.5 rounded-xl border flex flex-col gap-2.5 shadow-lg ${theme === 'dark' ? 'bg-[#111728] border-[#22304d]' : 'bg-blue-50 border-blue-200'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: selectedNode.color }}></span>
+                  <span className="text-[9px] font-mono-code uppercase font-bold" style={{ color: selectedNode.color }}>
+                    {selectedNode.districtName}
+                  </span>
+                </div>
+                <span className="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-surface-container uppercase text-outline">
+                  {selectedNode.extension || 'file'}
+                </span>
               </div>
               <div className="flex flex-col">
                 <h3 className={`font-mono-code font-bold text-sm truncate ${theme === 'dark' ? 'text-[#00f5ff]' : 'text-blue-700'}`}>
@@ -692,27 +829,27 @@ export default function App() {
                   {selectedNode.path}
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono-code pt-1 border-t border-outline/20">
+              <div className="grid grid-cols-2 gap-2 text-[10px] font-mono-code pt-1 border-t border-outline/20">
                 <div>
-                  <span className="text-outline block text-[9px] uppercase">EST. LINES</span>
+                  <span className="text-outline block text-[8px] uppercase">LÍNEAS / LOC</span>
                   <span className="font-bold">{selectedNode.lines} LOC</span>
                 </div>
                 <div>
-                  <span className="text-outline block text-[9px] uppercase">TYPE</span>
-                  <span className="font-bold uppercase text-[#4edea3]">{selectedNode.buildingType}</span>
+                  <span className="text-outline block text-[8px] uppercase">MÉTODOS</span>
+                  <span className="font-bold text-[#4edea3]">{selectedNode.methods} FUNCIONES</span>
                 </div>
               </div>
               <button
                 onClick={handleAudit}
-                className={`w-full py-2.5 rounded-lg font-mono-code text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${theme === 'dark' ? 'bg-[#00f5ff] hover:bg-[#63f7ff] text-[#003739]' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                className={`w-full py-2 rounded-lg font-mono-code text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${theme === 'dark' ? 'bg-[#00f5ff] hover:bg-[#63f7ff] text-[#003739]' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
               >
                 <Rocket className="w-4 h-4" />
                 {t.audit}
               </button>
             </div>
           ) : (
-            <div className="text-center py-4 opacity-50 text-xs font-mono-code uppercase text-outline">
-              Click a building to inspect AST
+            <div className="text-center py-2 opacity-50 text-[11px] font-mono-code uppercase text-outline">
+              Haz clic en cualquier edificio para auditar
             </div>
           )}
         </div>
@@ -720,10 +857,9 @@ export default function App() {
 
       {/* 3D Canvas Viewport */}
       <main className="fixed inset-0 z-0 pl-80 pt-16 pb-8">
-        <Canvas camera={{ position: [85, 75, 95], fov: 42 }}>
-          {/* Background & Atmospheric Fog */}
+        <Canvas camera={{ position: [90, 85, 105], fov: 42 }}>
           <color attach="background" args={[theme === 'dark' ? '#060811' : '#e2e8f0']} />
-          <fog attach="fog" args={[theme === 'dark' ? '#060811' : '#e2e8f0', 90, 480]} />
+          <fog attach="fog" args={[theme === 'dark' ? '#060811' : '#e2e8f0', 100, 500]} />
 
           {/* Lighting */}
           {theme === 'dark' ? (
@@ -731,11 +867,10 @@ export default function App() {
               <ambientLight intensity={0.5} />
               <directionalLight position={[100, 160, 80]} intensity={1.8} color="#38bdf8" />
               <directionalLight position={[-100, 120, -80]} intensity={1.4} color="#ec4899" />
-              <pointLight position={[0, 60, 0]} intensity={1.2} color="#ffffff" distance={250} />
+              <pointLight position={[0, 60, 0]} intensity={1.2} color="#ffffff" distance={300} />
             </>
           ) : (
             <>
-              {/* Daylight for Architectural Clay / Model Rendering */}
               <ambientLight intensity={1.2} />
               <directionalLight position={[120, 180, 100]} intensity={2.4} color="#ffffff" castShadow />
               <directionalLight position={[-80, 100, -80]} intensity={0.8} color="#cbd5e1" />
@@ -746,20 +881,24 @@ export default function App() {
           {/* Urban Streets, Avenues & Markings */}
           <UrbanStreetGrid theme={theme} />
 
-          {/* Complete City Blocks with Stepped Architectural Buildings */}
+          {/* Floating 3D District Hologram Titles */}
+          <DistrictLabels districts={cityModel.districts} theme={theme} />
+
+          {/* 100% Functional City Blocks Categorized by District */}
           {cityModel.blocks.map((block) => (
             <CityBlock
               key={block.id}
               block={block}
               selectedId={selectedNodeId}
               hoveredId={hoveredNodeId}
+              activeFilter={activeFilter}
               theme={theme}
               onSelectNode={setSelectedNodeId}
               onHoverNode={setHoveredNodeId}
             />
           ))}
 
-          {/* Living Traffic System (Ambient Cars + N+1 Telemetry Packets) */}
+          {/* Living Traffic System */}
           <TrafficSystem events={trafficEvents} theme={theme} />
 
           {/* Orbit Controls */}
@@ -767,7 +906,7 @@ export default function App() {
             makeDefault
             dampingFactor={0.05}
             minDistance={15}
-            maxDistance={450}
+            maxDistance={500}
             maxPolarAngle={Math.PI / 2 - 0.05}
           />
 
@@ -796,7 +935,7 @@ export default function App() {
                 </div>
                 <h2 className="text-xl font-headline-lg font-bold">{t.optTitle}</h2>
                 <p className="text-xs text-outline font-mono-code">
-                  {t.optDesc} <strong className="text-[#00f5ff]">{selectedNode.name}</strong>
+                  {t.optDesc} <strong className="text-[#00f5ff]">{selectedNode.name}</strong> ({selectedNode.districtName})
                 </p>
               </div>
               <button
@@ -834,7 +973,7 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="flex-1 p-4 text-[11px] leading-relaxed opacity-80 overflow-y-auto">
-                    {`// [AI Auto-Fixed] Atomic Eager Query\nconst usersWithOrders = await db.query(\n  'SELECT users.*, json_agg(orders.*) as orders FROM users LEFT JOIN orders ON users.id = orders.user_id GROUP BY users.id'\n);\nreturn usersWithOrders;\n\n// Remainder of file preserved...`}
+                    {`// [AI Auto-Fixed] Eager Query Optimization\n// Target: ${selectedNode.path}\nconst optimizedQuery = await db.query(\n  'SELECT * FROM main_table LEFT JOIN sub_items ON main_table.id = sub_items.parent_id'\n);\nreturn optimizedQuery;\n\n// Remainder of file preserved...`}
                   </div>
                 )}
               </div>
