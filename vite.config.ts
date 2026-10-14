@@ -4,5 +4,10 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './', // Crucial for Electron standalone desktop file:// loading
   plugins: [react(), tailwindcss()],
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  }
 })
