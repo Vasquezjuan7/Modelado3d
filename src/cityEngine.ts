@@ -43,6 +43,11 @@ export interface BuildingData {
   hasSpire: boolean;
   spireHeight: number;
   hasHelipad: boolean;
+  hasCoolingTowers: boolean;
+  hasEntrancePodium: boolean;
+  hasCommunicationsDish: boolean;
+  hasSolarPanels: boolean;
+  accentStripes: boolean;
   absolutePosition: [number, number, number];
 }
 
@@ -281,6 +286,11 @@ export function generateBuildingTiers(
   hasSpire: boolean;
   spireHeight: number;
   hasHelipad: boolean;
+  hasCoolingTowers: boolean;
+  hasEntrancePodium: boolean;
+  hasCommunicationsDish: boolean;
+  hasSolarPanels: boolean;
+  accentStripes: boolean;
   isGodObject: boolean;
 } {
   const isGodObject = isGodObjectParam || lines > 1100 || sizeBytes > 40000;
@@ -290,6 +300,11 @@ export function generateBuildingTiers(
   let hasSpire = false;
   let spireHeight = 0;
   let hasHelipad = false;
+  let hasCoolingTowers = false;
+  let hasEntrancePodium = true;
+  let hasCommunicationsDish = false;
+  let hasSolarPanels = false;
+  let accentStripes = false;
 
   const w = lotW * 0.88;
   const d = lotD * 0.88;
@@ -298,7 +313,11 @@ export function generateBuildingTiers(
     buildingType = 'godObject';
     height = Math.min(65, 48 + Math.round((lines - 1100) * 0.012));
     hasSpire = true;
-    spireHeight = 11;
+    spireHeight = 12;
+    hasHelipad = true;
+    hasCoolingTowers = true;
+    hasCommunicationsDish = true;
+    accentStripes = true;
     
     const h1 = height * 0.22;
     const h2 = height * 0.26;
@@ -317,7 +336,11 @@ export function generateBuildingTiers(
     buildingType = 'skyscraper';
     height = Math.min(46, 28 + Math.round((lines - 350) * 0.04));
     hasSpire = true;
-    spireHeight = 6.5;
+    spireHeight = 7.5;
+    hasHelipad = lines > 550;
+    hasCoolingTowers = true;
+    hasCommunicationsDish = lines > 700;
+    accentStripes = true;
 
     const h1 = height * 0.28;
     const h2 = height * 0.32;
@@ -334,6 +357,8 @@ export function generateBuildingTiers(
     buildingType = 'tower';
     height = Math.min(26, 16 + Math.round((lines - 120) * 0.042));
     hasHelipad = lines > 220;
+    hasCoolingTowers = true;
+    hasCommunicationsDish = true;
 
     const h1 = height * 0.35;
     const h2 = height * 0.48;
@@ -347,6 +372,8 @@ export function generateBuildingTiers(
   } else if (lines > 40) {
     buildingType = 'block';
     height = Math.min(15, 10 + Math.round((lines - 40) * 0.06));
+    hasCoolingTowers = true;
+    hasSolarPanels = true;
 
     const h1 = height * 0.75;
     const h2 = height * 0.25;
@@ -358,6 +385,7 @@ export function generateBuildingTiers(
   } else {
     buildingType = 'pavilion';
     height = Math.min(9, 5 + Math.round(lines * 0.08));
+    hasSolarPanels = true;
 
     const h1 = height * 0.8;
     const h2 = height * 0.2;
@@ -377,6 +405,11 @@ export function generateBuildingTiers(
     hasSpire,
     spireHeight,
     hasHelipad,
+    hasCoolingTowers,
+    hasEntrancePodium,
+    hasCommunicationsDish,
+    hasSolarPanels,
+    accentStripes,
     isGodObject
   };
 }
@@ -601,6 +634,11 @@ export function buildCompleteCity(rootNode: FileNode | null): CompleteCityModel 
         hasSpire: geom.hasSpire,
         spireHeight: geom.spireHeight,
         hasHelipad: geom.hasHelipad,
+        hasCoolingTowers: geom.hasCoolingTowers,
+        hasEntrancePodium: geom.hasEntrancePodium,
+        hasCommunicationsDish: geom.hasCommunicationsDish,
+        hasSolarPanels: geom.hasSolarPanels,
+        accentStripes: geom.accentStripes,
         absolutePosition: [absX, 0, absZ]
       };
 
