@@ -53,8 +53,23 @@ import {
   RefreshCw,
   ExternalLink,
   ShieldAlert,
-  CheckCircle
+  CheckCircle,
+  UserPlus,
+  LogIn,
+  LogOut,
+  Database
 } from 'lucide-react';
+import {
+  registerUser,
+  loginUser,
+  logoutUser,
+  checkInitialSession,
+  isSupabaseConfigured,
+  getSupabaseConfig,
+  initSupabaseClient,
+  SUPABASE_SCHEMA_SQL
+} from './supabaseClient';
+import type { UserProfile } from './supabaseClient';
 
 // --- Procedural Window Texture Cache ---
 let darkWindowTex: THREE.CanvasTexture | null = null;
@@ -785,6 +800,91 @@ export default function App() {
   const [cameraCoords, setCameraCoords] = useState('XYZ: [+55.0, +65.0, +60.0m]');
   const [copiedPath, setCopiedPath] = useState(false);
 
+  // Supabase Authentication & Database States
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authFullName, setAuthFullName] = useState('');
+  const [authRole, setAuthRole] = useState('Arquitecto de Software');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authSuccessMsg, setAuthSuccessMsg] = useState<string | null>(null);
+
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showDbModal, setShowDbModal] = useState(false);
+  const [supabaseUrlInput, setSupabaseUrlInput] = useState(getSupabaseConfig().url);
+  const [supabaseKeyInput, setSupabaseKeyInput] = useState(getSupabaseConfig().anonKey);
+  const [dbSaveToast, setDbSaveToast] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
+
+  // Load session on startup
+  useEffect(() => {
+    checkInitialSession().then((user) => {
+      if (user) setCurrentUser(user);
+    });
+  }, []);
+
+  const handleAuthSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setAuthLoading(true);
+    setAuthError(null);
+    setAuthSuccessMsg(null);
+
+    if (authMode === 'register') {
+      const { user, error } = await registerUser(authEmail, authPassword, authFullName, authRole);
+      if (error) {
+        setAuthError(error);
+        setAuthLoading(false);
+      } else {
+        setCurrentUser(user);
+        setAuthSuccessMsg('¡Cuenta registrada y guardada con éxito!');
+        setTimeout(() => {
+          setShowAuthModal(false);
+          setAuthLoading(false);
+          setAuthSuccessMsg(null);
+          setAuthEmail('');
+          setAuthPassword('');
+        }, 1200);
+      }
+    } else {
+      const { user, error } = await loginUser(authEmail, authPassword);
+      if (error) {
+        setAuthError(error);
+        setAuthLoading(false);
+      } else {
+        setCurrentUser(user);
+        setAuthSuccessMsg('¡Sesión iniciada con éxito!');
+        setTimeout(() => {
+          setShowAuthModal(false);
+          setAuthLoading(false);
+          setAuthSuccessMsg(null);
+          setAuthEmail('');
+          setAuthPassword('');
+        }, 1000);
+      }
+    }
+  };
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setCurrentUser(null);
+    setShowUserDropdown(false);
+  };
+
+  const handleSaveDbConfig = () => {
+    initSupabaseClient({
+      url: supabaseUrlInput.trim(),
+      anonKey: supabaseKeyInput.trim()
+    });
+    setDbSaveToast(true);
+    setTimeout(() => {
+      setDbSaveToast(false);
+      setShowDbModal(false);
+    }, 1800);
+  };
+
   // Build contiguous integrated city
   const cityModel: CompleteCityModel = useMemo(() => {
     return buildCompleteCity(treeData);
@@ -1206,6 +1306,14 @@ export default function App() {
         </div>
       )}
 
+      {/* Toast Notification when Supabase DB Config Saved */}
+      {dbSaveToast && (
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-mono text-xs font-bold shadow-2xl animate-in slide-in-from-top">
+          <CheckCircle className="w-4 h-4" />
+          <span>¡Conexión Supabase Guardada Exitosamente!</span>
+        </div>
+      )}
+
       {/* ========================================================
           1. TOP COMMAND HEADER NAVBAR
           ======================================================== */}
@@ -1289,6 +1397,111 @@ export default function App() {
             <Download className={`w-3.5 h-3.5 ${theme === 'dark' ? 'text-cyan-400' : 'text-blue-600'}`} />
             <span className="hidden sm:inline">Descargar App PC (.exe)</span>
           </button>
+
+          {/* Supabase Cloud / Database Button */}
+          <button
+            onClick={() => setShowDbModal(true)}
+            className={`px-3 py-1.5 rounded-xl border font-mono text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 ${
+              isSupabaseConfigured()
+                ? theme === 'dark'
+                  ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                : theme === 'dark'
+                  ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
+                  : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+            }`}
+            title="Configuración de Base de Datos Supabase (PostgreSQL)"
+          >
+            <Database className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">
+              {isSupabaseConfigured() ? 'Supabase Conectado' : 'BD: Configurar Supabase'}
+            </span>
+            <span className={`w-2 h-2 rounded-full ${isSupabaseConfigured() ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+          </button>
+
+          {/* User Account / Auth Section */}
+          {currentUser ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserDropdown(prev => !prev)}
+                className={`px-3 py-1.5 rounded-xl border font-mono text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95 ${
+                  theme === 'dark'
+                    ? 'bg-[#121930] hover:bg-[#1a2342] text-white border-cyan-500/40 shadow-[0_0_12px_rgba(0,245,255,0.15)]'
+                    : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-sm'
+                }`}
+              >
+                <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-cyan-500 to-emerald-400 text-slate-950 flex items-center justify-center font-bold text-[10px]">
+                  {currentUser.fullName ? currentUser.fullName.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <span className="font-bold max-w-[110px] truncate">{currentUser.fullName}</span>
+              </button>
+
+              {/* User Dropdown Menu */}
+              {showUserDropdown && (
+                <div className={`absolute right-0 mt-2 w-72 rounded-2xl border shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2 font-mono ${
+                  theme === 'dark' ? 'bg-[#0a0e1c] border-white/10 text-white shadow-2xl shadow-cyan-950/40' : 'bg-white border-slate-200 text-slate-800 shadow-xl'
+                }`}>
+                  <div className="flex items-center gap-3 pb-3 border-b border-white/10 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-400 text-slate-950 flex items-center justify-center font-bold text-base shadow-lg">
+                      {currentUser.fullName ? currentUser.fullName.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-bold text-xs truncate">{currentUser.fullName}</span>
+                      <span className="text-[10px] opacity-60 truncate">{currentUser.email}</span>
+                      <span className="text-[9px] text-cyan-400 font-semibold">{currentUser.role}</span>
+                    </div>
+                  </div>
+
+                  <div className={`p-2.5 rounded-xl border text-[11px] mb-3 flex items-center justify-between ${
+                    isSupabaseConfigured()
+                      ? theme === 'dark' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                      : theme === 'dark' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'
+                  }`}>
+                    <span>Base de Datos:</span>
+                    <strong className="font-bold">{isSupabaseConfigured() ? 'Supabase Cloud' : 'Local Sandbox'}</strong>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      onClick={() => {
+                        setShowUserDropdown(false);
+                        setShowDbModal(true);
+                      }}
+                      className={`w-full py-2 px-3 rounded-xl border text-xs font-semibold flex items-center gap-2 cursor-pointer transition-colors ${
+                        theme === 'dark' ? 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-200' : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <Database className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Configurar Supabase</span>
+                    </button>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full py-2 px-3 rounded-xl border border-red-500/30 text-xs font-semibold text-red-400 hover:bg-red-500/10 flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Cerrar Sesión</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setAuthMode('login');
+                setShowAuthModal(true);
+              }}
+              className={`px-3.5 py-1.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-95 ${
+                theme === 'dark'
+                  ? 'bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 shadow-emerald-500/25'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/25'
+              }`}
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Iniciar Sesión</span>
+            </button>
+          )}
 
           {/* Language Switcher */}
           <div className={`flex items-center p-1 rounded-xl border font-mono text-xs font-semibold ${theme === 'dark' ? 'bg-[#0f1424] border-white/[0.08]' : 'bg-slate-100 border-slate-200'}`}>
@@ -2173,6 +2386,420 @@ export default function App() {
                     <span>{t.realFixApplied}</span>
                   </div>
                 )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          6. USER AUTHENTICATION MODAL (Supabase Auth / Local DB)
+          ======================================================== */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
+          <div className={`w-full max-w-md rounded-3xl border shadow-2xl overflow-hidden transition-all ${theme === 'dark' ? 'bg-[#090d1a] border-cyan-500/30 text-white shadow-[0_0_50px_rgba(0,245,255,0.15)]' : 'bg-white border-slate-300 text-slate-900 shadow-2xl'}`}>
+            
+            {/* Modal Header */}
+            <div className={`p-5 border-b flex justify-between items-center ${theme === 'dark' ? 'bg-[#0e1426] border-white/[0.08]' : 'bg-slate-50 border-slate-200'}`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-400 text-slate-950 flex items-center justify-center font-bold shadow-md">
+                  {authMode === 'register' ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="font-bold text-base leading-tight">
+                    {authMode === 'register' ? 'Crear Nueva Cuenta' : 'Iniciar Sesión'}
+                  </h3>
+                  <span className={`text-[10px] font-mono tracking-wider uppercase ${theme === 'dark' ? 'text-cyan-400' : 'text-blue-600'}`}>
+                    // CODECITY NEXUS 3D ACCESS
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAuthModal(false);
+                  setAuthError(null);
+                  setAuthSuccessMsg(null);
+                }}
+                className={`p-2 rounded-xl transition-colors cursor-pointer ${theme === 'dark' ? 'opacity-60 hover:opacity-100 hover:bg-white/10' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'}`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Mode Switcher Tabs */}
+            <div className={`px-5 py-2.5 border-b flex gap-2 font-mono text-xs font-semibold ${theme === 'dark' ? 'bg-[#070a14] border-white/[0.06]' : 'bg-slate-100 border-slate-200'}`}>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('login');
+                  setAuthError(null);
+                  setAuthSuccessMsg(null);
+                }}
+                className={`flex-1 py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  authMode === 'login'
+                    ? theme === 'dark'
+                      ? 'bg-gradient-to-r from-cyan-500/20 to-teal-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm font-bold'
+                      : 'bg-white text-blue-700 border border-blue-200 shadow-sm font-bold'
+                    : 'opacity-60 hover:opacity-100'
+                }`}
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Iniciar Sesión</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('register');
+                  setAuthError(null);
+                  setAuthSuccessMsg(null);
+                }}
+                className={`flex-1 py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  authMode === 'register'
+                    ? theme === 'dark'
+                      ? 'bg-gradient-to-r from-cyan-500/20 to-teal-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm font-bold'
+                      : 'bg-white text-blue-700 border border-blue-200 shadow-sm font-bold'
+                    : 'opacity-60 hover:opacity-100'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Crear Cuenta</span>
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleAuthSubmit} className="p-6 flex flex-col gap-4 font-mono text-xs">
+              
+              {/* Error Callout */}
+              {authError && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center gap-2 text-xs">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              {/* Success Callout */}
+              {authSuccessMsg && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-2 text-xs">
+                  <CheckCircle className="w-4 h-4 shrink-0" />
+                  <span>{authSuccessMsg}</span>
+                </div>
+              )}
+
+              {/* Register Extra Fields */}
+              {authMode === 'register' && (
+                <>
+                  <div>
+                    <label className={`block font-bold mb-1.5 uppercase tracking-wider text-[11px] ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Nombre Completo
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={authFullName}
+                      onChange={(e) => setAuthFullName(e.target.value)}
+                      placeholder="Ej: Juan Valderrama"
+                      className={`w-full p-2.5 rounded-xl border text-xs outline-none transition-all ${
+                        theme === 'dark'
+                          ? 'bg-[#060811] border-white/[0.1] text-white focus:border-cyan-400'
+                          : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-blue-500'
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block font-bold mb-1.5 uppercase tracking-wider text-[11px] ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Rol Profesional
+                    </label>
+                    <select
+                      value={authRole}
+                      onChange={(e) => setAuthRole(e.target.value)}
+                      className={`w-full p-2.5 rounded-xl border text-xs outline-none cursor-pointer ${
+                        theme === 'dark'
+                          ? 'bg-[#060811] border-white/[0.1] text-white'
+                          : 'bg-slate-50 border-slate-300 text-slate-900'
+                      }`}
+                    >
+                      <option value="Arquitecto de Software">Arquitecto de Software</option>
+                      <option value="Desarrollador Full-Stack">Desarrollador Full-Stack</option>
+                      <option value="Ingeniero DevOps & Cloud">Ingeniero DevOps & Cloud</option>
+                      <option value="Tech Lead / Líder Técnico">Tech Lead / Líder Técnico</option>
+                      <option value="Seguridad & Auditoría QA">Seguridad & Auditoría QA</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {/* Email */}
+              <div>
+                <label className={`block font-bold mb-1.5 uppercase tracking-wider text-[11px] ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Correo Electrónico
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  placeholder="usuario@ejemplo.com"
+                  className={`w-full p-2.5 rounded-xl border text-xs outline-none transition-all ${
+                    theme === 'dark'
+                      ? 'bg-[#060811] border-white/[0.1] text-white focus:border-cyan-400'
+                      : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-blue-500'
+                  }`}
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className={`block font-bold mb-1.5 uppercase tracking-wider text-[11px] ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Contraseña {authMode === 'register' && <span className="opacity-60">(mínimo 6 caracteres)</span>}
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className={`w-full p-2.5 rounded-xl border text-xs outline-none transition-all ${
+                    theme === 'dark'
+                      ? 'bg-[#060811] border-white/[0.1] text-white focus:border-cyan-400'
+                      : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-blue-500'
+                  }`}
+                />
+              </div>
+
+              {/* DB Status Badge */}
+              <div className={`p-2.5 rounded-xl border flex items-center justify-between text-[10px] ${
+                isSupabaseConfigured()
+                  ? theme === 'dark' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : theme === 'dark' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'
+              }`}>
+                <span className="flex items-center gap-1.5">
+                  <Database className="w-3.5 h-3.5" />
+                  {isSupabaseConfigured() ? 'Supabase PostgreSQL Cloud Activo' : 'Base de Datos Local Segura Activa'}
+                </span>
+                <span className="font-bold underline cursor-pointer" onClick={() => { setShowAuthModal(false); setShowDbModal(true); }}>
+                  {isSupabaseConfigured() ? 'Ver BD' : 'Conectar Supabase'}
+                </span>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={authLoading}
+                className={`mt-2 w-full py-3 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95 disabled:opacity-50 ${
+                  theme === 'dark'
+                    ? 'bg-gradient-to-r from-cyan-400 to-teal-400 hover:from-cyan-300 hover:to-teal-300 text-slate-950 shadow-cyan-500/25'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/25'
+                }`}
+              >
+                {authLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : authMode === 'register' ? (
+                  <UserPlus className="w-4 h-4" />
+                ) : (
+                  <LogIn className="w-4 h-4" />
+                )}
+                <span>
+                  {authLoading
+                    ? 'Procesando...'
+                    : authMode === 'register'
+                    ? 'Registrar y Guardar Cuenta'
+                    : 'Iniciar Sesión'}
+                </span>
+              </button>
+
+              {/* Switch link */}
+              <div className="text-center mt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode(authMode === 'register' ? 'login' : 'register');
+                    setAuthError(null);
+                    setAuthSuccessMsg(null);
+                  }}
+                  className={`text-[11px] underline opacity-70 hover:opacity-100 cursor-pointer ${theme === 'dark' ? 'text-cyan-400' : 'text-blue-600'}`}
+                >
+                  {authMode === 'register'
+                    ? '¿Ya tienes una cuenta? Inicia sesión aquí'
+                    : '¿No tienes cuenta aún? Regístrate gratis aquí'}
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          7. SUPABASE DATABASE CONFIGURATION MODAL
+          ======================================================== */}
+      {showDbModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xl p-4 animate-in fade-in">
+          <div className={`w-full max-w-2xl max-h-[90vh] rounded-3xl border shadow-2xl overflow-hidden flex flex-col transition-all ${
+            theme === 'dark' ? 'bg-[#090d1a] border-emerald-500/30 text-white shadow-[0_0_60px_rgba(16,185,129,0.18)]' : 'bg-white border-slate-300 text-slate-900 shadow-2xl'
+          }`}>
+            
+            {/* Header */}
+            <div className={`p-5 border-b flex justify-between items-center ${theme === 'dark' ? 'bg-[#0e1426] border-white/[0.08]' : 'bg-slate-50 border-slate-200'}`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-bold shadow-md">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base leading-tight">Base de Datos Supabase (PostgreSQL)</h3>
+                  <span className={`text-[10px] font-mono tracking-wider uppercase ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                    // PERSISTENCIA CLOUD DE USUARIOS Y REGISTROS
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDbModal(false)}
+                className={`p-2 rounded-xl transition-colors cursor-pointer ${theme === 'dark' ? 'opacity-60 hover:opacity-100 hover:bg-white/10' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'}`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5 font-mono text-xs">
+              
+              {/* Architecture Decision Banner */}
+              <div className={`p-4 rounded-2xl border flex items-start gap-3.5 ${
+                theme === 'dark' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200' : 'bg-emerald-50 border-emerald-200 text-emerald-950'
+              }`}>
+                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                <div className="text-[11px] leading-relaxed">
+                  <strong className="block font-bold text-xs mb-1">¿Por qué Supabase es la mejor opción?</strong>
+                  <p className="opacity-90">
+                    Supabase ofrece un motor de autenticación completo (Auth con bcrypt, tokens JWT y recuperación), base de datos <strong>PostgreSQL</strong> nativa, y seguridad por filas (RLS) directamente desde el cliente sin requerir programar ni pagar servidores backend en Railway. ¡Incluye 50,000 usuarios activos al mes 100% gratis!
+                  </p>
+                </div>
+              </div>
+
+              {/* Connection Form */}
+              <div className="flex flex-col gap-3.5">
+                <div>
+                  <label className={`block font-bold mb-1.5 uppercase tracking-wider text-[11px] ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Project URL (URL de tu Proyecto Supabase)
+                  </label>
+                  <input
+                    type="text"
+                    value={supabaseUrlInput}
+                    onChange={(e) => setSupabaseUrlInput(e.target.value)}
+                    placeholder="https://xyzabcdefghijklmnop.supabase.co"
+                    className={`w-full p-2.5 rounded-xl border text-xs outline-none transition-all ${
+                      theme === 'dark'
+                        ? 'bg-[#060811] border-white/[0.1] text-white focus:border-emerald-400'
+                        : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-emerald-500'
+                    }`}
+                  />
+                  <span className="text-[10px] opacity-60 mt-1 block">
+                    Encuéntralo en tu proyecto Supabase: <strong>Project Settings → API → Project URL</strong>
+                  </span>
+                </div>
+
+                <div>
+                  <label className={`block font-bold mb-1.5 uppercase tracking-wider text-[11px] ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Anon Public Key (Clave Pública Anónima)
+                  </label>
+                  <input
+                    type="password"
+                    value={supabaseKeyInput}
+                    onChange={(e) => setSupabaseKeyInput(e.target.value)}
+                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS..."
+                    className={`w-full p-2.5 rounded-xl border text-xs outline-none transition-all ${
+                      theme === 'dark'
+                        ? 'bg-[#060811] border-white/[0.1] text-white focus:border-emerald-400'
+                        : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-emerald-500'
+                    }`}
+                  />
+                  <span className="text-[10px] opacity-60 mt-1 block">
+                    Encuéntralo en: <strong>Project Settings → API → Project API keys → anon / public</strong>
+                  </span>
+                </div>
+              </div>
+
+              {/* SQL Schema Script Box with 1-Click Copy */}
+              <div className={`p-4 rounded-2xl border flex flex-col gap-2.5 ${
+                theme === 'dark' ? 'bg-[#060811] border-white/[0.08]' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-4 h-4 text-emerald-400" />
+                    <span className="font-bold text-xs">Script SQL para Crear Tablas (profiles + code_audits)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(SUPABASE_SCHEMA_SQL);
+                      setCopiedSql(true);
+                      setTimeout(() => setCopiedSql(false), 2000);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-[11px] font-bold cursor-pointer transition-all"
+                  >
+                    {copiedSql ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedSql ? '¡Copiado!' : 'Copiar Script SQL'}</span>
+                  </button>
+                </div>
+                <p className="text-[10px] opacity-70">
+                  Pega este código en el <strong>SQL Editor</strong> de tu panel de Supabase y pulsa <strong>Run</strong>. Creará la tabla de perfiles con triggers automáticos y políticas de seguridad RLS.
+                </p>
+                <div className={`p-3 rounded-xl border max-h-36 overflow-y-auto text-[10px] ${
+                  theme === 'dark' ? 'bg-black/60 border-white/[0.05] text-emerald-300' : 'bg-white border-slate-200 text-slate-800'
+                }`}>
+                  <pre className="whitespace-pre font-mono">{SUPABASE_SCHEMA_SQL}</pre>
+                </div>
+              </div>
+
+              {/* Step by step summary */}
+              <div className={`p-4 rounded-2xl border flex flex-col gap-2 ${
+                theme === 'dark' ? 'bg-[#0e1426] border-white/[0.08]' : 'bg-slate-100 border-slate-200'
+              }`}>
+                <span className="font-bold text-xs text-cyan-400">Paso a Paso Rápido para Conectar:</span>
+                <ol className="list-decimal list-inside space-y-1 text-[11px] opacity-80 leading-relaxed">
+                  <li>Ingresa a <a href="https://supabase.com" target="_blank" rel="noreferrer" className="text-emerald-400 underline font-semibold">supabase.com</a> y crea un proyecto gratuito.</li>
+                  <li>Ve a la pestaña <strong>SQL Editor</strong>, pega el script copiado arriba y presiona <strong>RUN</strong>.</li>
+                  <li>Ve a <strong>Project Settings → API</strong> y copia el URL y la clave anónima (anon public).</li>
+                  <li>Pégalos en los campos de arriba y haz clic en <strong>Guardar y Conectar</strong>.</li>
+                </ol>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className={`p-4 border-t flex justify-between items-center ${theme === 'dark' ? 'bg-[#0e1426] border-white/[0.08]' : 'bg-slate-50 border-slate-200'}`}>
+              <a
+                href="https://supabase.com/dashboard"
+                target="_blank"
+                rel="noreferrer"
+                className={`flex items-center gap-1.5 text-xs font-mono underline opacity-70 hover:opacity-100 ${theme === 'dark' ? 'text-cyan-400' : 'text-blue-600'}`}
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Ir al Panel de Supabase</span>
+              </a>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDbModal(false)}
+                  className={`px-4 py-2 rounded-xl text-xs font-mono uppercase transition-colors cursor-pointer ${theme === 'dark' ? 'opacity-60 hover:opacity-100' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  Cerrar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveDbConfig}
+                  className={`px-5 py-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-95 ${
+                    theme === 'dark'
+                      ? 'bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 shadow-emerald-500/25'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+                  }`}
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Guardar y Conectar</span>
+                </button>
               </div>
             </div>
 

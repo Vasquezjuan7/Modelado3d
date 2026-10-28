@@ -1,1 +1,1 @@
-export function offsetHSL(hex: string, h: number, s: number, l: number): string { return hex; }
+export function offsetHSL(hex: string, _h: number, _s: number, _l: number): string { return hex; }
