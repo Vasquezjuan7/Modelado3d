@@ -138,3 +138,25 @@ function countFunctions(content: string, ext: string): number {
   return total;
 }
 
+const IMPORT_PATTERNS: RegExp[] = [
+  /\bimport\s+(?:[\w*{}\s,$]+\s+from\s+)?['"]([^'"]+)['"]/g,
+  /\bexport\s+[\w*{}\s,$]+\s+from\s+['"]([^'"]+)['"]/g,
+  /\brequire\(\s*['"]([^'"]+)['"]\s*\)/g,
+  /\bimport\(\s*['"]([^'"]+)['"]\s*\)/g,
+  /^\s*from\s+(\.[\w.]*)\s+import\b/gm, // python relative
+  /^\s*import\s+([\w.]+)\s*$/gm, // python absolute
+  /<script[^>]+src=["']([^"']+)["']/g,
+  /<link[^>]+href=["']([^"']+\.css)["']/g,
+  /@import\s+['"]([^'"]+)['"]/g,
+];
+
+function extractImports(content: string): string[] {
+  const out = new Set<string>();
+  for (const re of IMPORT_PATTERNS) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(content))) out.add(m[1]);
+  }
+  return [...out];
+}
+
