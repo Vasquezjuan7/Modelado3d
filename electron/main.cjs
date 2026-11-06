@@ -68,6 +68,7 @@ function createWindow() {
     minWidth: 1100,
     minHeight: 700,
     title: 'CodeCity Nexus 3D',
+    icon: path.join(__dirname, '../build/icon.png'),
     backgroundColor: '#05070d',
     autoHideMenuBar: true,
     show: false,
