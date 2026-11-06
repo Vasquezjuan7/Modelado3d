@@ -672,3 +672,57 @@ export async function testOpenAIKey(apiKey: string, model: string): Promise<{ ok
   return { ok: true, ms: Math.round(performance.now() - t0), reply: r.text.trim() };
 }
 
+// --------------------------------------------------------
+// 5. Public API
+// --------------------------------------------------------
+export async function auditFile(
+  code: string,
+  fileName: string,
+  filePath: string,
+  config: AIConfig,
+  opts: { lang: 'es' | 'en'; context?: string; signal?: AbortSignal },
+): Promise<AuditResult> {
+  if (config.provider === 'local' || !isAIReady(config)) return analyzeCodeLocally(code, fileName);
+  const prompt = buildPrompt(code, fileName, filePath, opts.lang, opts.context);
+  const t0 = performance.now();
+
+  if (config.provider === 'gemini') {
+    const { text, usage, model, note } = await geminiGenerate(config.geminiKey, config.geminiModel || DEFAULT_GEMINI_MODEL, prompt, GEMINI_SCHEMA, opts.signal);
+    const r = normalizeResult(parseJsonLoose(text), code, 'gemini', model, Math.round(performance.now() - t0), usage);
+    if (note) r.explanation = `${r.explanation}\n\n(${note})`.trim();
+    return r;
+  }
+
+  const model = config.openaiModel || DEFAULT_OPENAI_MODEL;
+  const system = `Devuelve SOLO un objeto JSON con las claves: title, severity (CRITICAL|HIGH|MEDIUM|LOW|CLEAN), summary, score (0-100), issues (array de {line, type, severity, title, message, snippet, fix}), explanation, refactoredCode.`;
+  const { text, usage } = await openaiGenerate(config.openaiKey, model, system, prompt, true, opts.signal);
+  return normalizeResult(parseJsonLoose(text), code, 'openai', model, Math.round(performance.now() - t0), usage);
+}
+
+/** Free-form architectural report for the whole repository (markdown) */
+export async function repoReport(
+  digest: string,
+  config: AIConfig,
+  lang: 'es' | 'en',
+  signal?: AbortSignal,
+): Promise<{ markdown: string; model: string }> {
+  const prompt = `${lang === 'es' ? 'Responde en español.' : 'Answer in English.'}
+Eres un arquitecto de software. A partir del siguiente resumen de un repositorio (estructura, métricas reales, dependencias y hallazgos del escáner estático), redacta un informe breve en Markdown con estas secciones:
+## Qué hace el proyecto
+## Arquitectura y módulos clave
+## Riesgos principales (prioriza los 5 más importantes, cita archivos)
+## Plan de mejora (pasos concretos)
+Sé específico y conciso (máx. ~400 palabras). No inventes archivos que no aparezcan.
+
+${digest}`;
+  if (config.provider === 'gemini') {
+    const { text, model } = await geminiGenerate(config.geminiKey, config.geminiModel || DEFAULT_GEMINI_MODEL, prompt, null, signal);
+    return { markdown: stripFences(text), model };
+  }
+  if (config.provider === 'openai') {
+    const model = config.openaiModel || DEFAULT_OPENAI_MODEL;
+    const { text } = await openaiGenerate(config.openaiKey, model, 'Eres un arquitecto de software experto.', prompt, false, signal);
+    return { markdown: text, model };
+  }
+  throw new Error('Configura Gemini u OpenAI para generar el informe del repositorio.');
+}
