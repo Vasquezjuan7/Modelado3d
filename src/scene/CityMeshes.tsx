@@ -197,3 +197,51 @@ function Trees({ positions, dark }: { positions: Array<[number, number, number]>
   );
 }
 
+// ---------------------------------------------------------------
+// Roads, lane markings and ground
+// ---------------------------------------------------------------
+export function Roads({ city, dark }: { city: CityModel; dark: boolean }) {
+  const dashRef = useRef<THREE.InstancedMesh>(null);
+  const { minX, maxX, minZ, maxZ } = city.bounds;
+  const dashes = useMemo(() => {
+    const out: Array<{ x: number; z: number; rot: number }> = [];
+    for (const rz of city.roadsZ) for (let x = minX; x <= maxX; x += 5) out.push({ x, z: rz, rot: 0 });
+    for (const rx of city.roadsX) for (let z = minZ; z <= maxZ; z += 5) out.push({ x: rx, z, rot: Math.PI / 2 });
+    return out;
+  }, [city, minX, maxX, minZ, maxZ]);
+
+  useEffect(() => {
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const e = new THREE.Euler();
+    dashes.forEach((d, i) => {
+      e.set(-Math.PI / 2, 0, d.rot);
+      q.setFromEuler(e);
+      m.compose(new THREE.Vector3(d.x, 0.03, d.z), q, new THREE.Vector3(2.2, 0.22, 1));
+      dashRef.current?.setMatrixAt(i, m);
+    });
+    if (dashRef.current) dashRef.current.instanceMatrix.needsUpdate = true;
+  }, [dashes]);
+
+  const w = maxX - minX;
+  const d = maxZ - minZ;
+  return (
+    <group>
+      {/* asphalt */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(minX + maxX) / 2, 0, (minZ + maxZ) / 2]} receiveShadow raycast={() => null}>
+        <planeGeometry args={[w + 14, d + 14]} />
+        <meshStandardMaterial color={dark ? '#070a12' : '#475569'} roughness={0.9} metalness={0.1} />
+      </mesh>
+      {/* outer ground */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(minX + maxX) / 2, -0.05, (minZ + maxZ) / 2]} raycast={() => null}>
+        <circleGeometry args={[Math.max(w, d) * 2.2 + 200, 64]} />
+        <meshStandardMaterial color={dark ? '#04060b' : '#cbd5e1'} roughness={1} />
+      </mesh>
+      <instancedMesh ref={dashRef} args={[undefined, undefined, dashes.length]} raycast={() => null}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial color={dark ? '#38bdf8' : '#f8fafc'} transparent opacity={dark ? 0.35 : 0.9} toneMapped={false} />
+      </instancedMesh>
+    </group>
+  );
+}
+
