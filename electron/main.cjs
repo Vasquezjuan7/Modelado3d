@@ -183,3 +183,9 @@ ipcMain.handle('nexus:writeFile', async (_e, absPath, content) => {
   fs.writeFileSync(absPath, content, 'utf-8');
 });
 
+ipcMain.handle('nexus:openPath', async (_e, p) => {
+  if (typeof p !== 'string') return;
+  if (/^https?:\/\//.test(p)) return shell.openExternal(p);
+  if (isInsideAllowed(p) || allowedRoots.has(path.resolve(p))) await shell.openPath(p);
+});
+
