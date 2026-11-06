@@ -160,3 +160,29 @@ function extractImports(content: string): string[] {
   return [...out];
 }
 
+export function analyzeSource(path: string, size: number, content?: string): RepoFile {
+  const name = path.split('/').pop() || path;
+  const ext = getExtension(name);
+  if (content === undefined) {
+    const est = Math.max(1, Math.round(size / 32));
+    return {
+      path, name, ext, size, lines: est, sloc: est, functions: Math.max(0, Math.round(est / 25)),
+      imports: [], language: languageOf(ext), linesEstimated: true,
+    };
+  }
+  const lines = content.split(/\r?\n/);
+  return {
+    path,
+    name,
+    ext,
+    size,
+    content,
+    lines: lines.length,
+    sloc: countSloc(lines, ext),
+    functions: countFunctions(content, ext),
+    imports: extractImports(content),
+    language: languageOf(ext),
+    linesEstimated: false,
+  };
+}
+
