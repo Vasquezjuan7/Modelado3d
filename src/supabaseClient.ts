@@ -406,3 +406,24 @@ alter table public.code_audits enable row level security;
 create policy "Usuarios gestionan sus propios análisis" on public.code_audits
   for all using (auth.uid() = user_id);
 `;
+
+/**
+ * Persist an audit summary (only when logged in with a real Supabase account)
+ */
+export async function saveAuditRecord(
+  user: UserProfile | null,
+  record: { fileName: string; language: string; issuesCount: number; score: number },
+): Promise<void> {
+  if (!user || user.isLocalGuest || !supabaseInstance) return;
+  try {
+    await supabaseInstance.from('code_audits').insert({
+      user_id: user.id,
+      file_name: record.fileName,
+      language: record.language,
+      issues_count: record.issuesCount,
+      architecture_score: record.score,
+    });
+  } catch (e) {
+    console.warn('No se pudo guardar la auditoría en Supabase:', e);
+  }
+}
