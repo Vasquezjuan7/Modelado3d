@@ -111,3 +111,40 @@ export interface CityModel {
   maxHeight: number;
 }
 
+export const LOT = 8;
+export const LOTS_PER_SIDE = 3;
+export const BLOCK = LOT * LOTS_PER_SIDE + 2; // 26
+export const STREET = 7;
+export const PITCH = BLOCK + STREET; // 33
+const LOTS_PER_BLOCK = LOTS_PER_SIDE * LOTS_PER_SIDE;
+// Center lot first, then edges, then corners — keeps tall towers at block centers
+const LOT_ORDER = [4, 1, 3, 5, 7, 0, 2, 6, 8];
+
+export function buildingHeight(lines: number): number {
+  return Math.min(95, 1.6 + Math.pow(Math.max(1, lines), 0.62) * 0.55);
+}
+
+export function buildingFootprint(functions: number, lines: number): number {
+  const f = functions > 0 ? functions : lines / 30;
+  return Math.min(LOT - 1.2, 2.6 + Math.sqrt(f) * 0.85);
+}
+
+function makeTiers(w: number, d: number, h: number): Tier[] {
+  if (h > 30) {
+    const h1 = h * 0.45, h2 = h * 0.33, h3 = h * 0.22;
+    return [
+      { w, d, h: h1, y: h1 / 2 },
+      { w: w * 0.78, d: d * 0.78, h: h2, y: h1 + h2 / 2 },
+      { w: w * 0.55, d: d * 0.55, h: h3, y: h1 + h2 + h3 / 2 },
+    ];
+  }
+  if (h > 13) {
+    const h1 = h * 0.7, h2 = h * 0.3;
+    return [
+      { w, d, h: h1, y: h1 / 2 },
+      { w: w * 0.7, d: d * 0.7, h: h2, y: h1 + h2 / 2 },
+    ];
+  }
+  return [{ w, d, h, y: h / 2 }];
+}
+
