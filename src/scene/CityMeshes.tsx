@@ -245,3 +245,34 @@ export function Roads({ city, dark }: { city: CityModel; dark: boolean }) {
   );
 }
 
+// ---------------------------------------------------------------
+// Landmarks: spires with aviation beacons on the tallest towers
+// ---------------------------------------------------------------
+export function Landmarks({ city, dark }: { city: CityModel; dark: boolean }) {
+  const beaconMat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#ff2d55', transparent: true, toneMapped: false }), []);
+  useFrame(({ clock }) => {
+    beaconMat.opacity = 0.25 + 0.75 * Math.pow(Math.max(0, Math.sin(clock.elapsedTime * 3)), 6);
+  });
+  const marks = city.buildings.filter((b) => b.landmark);
+  return (
+    <group>
+      {marks.map((b) => {
+        const top = b.tiers[b.tiers.length - 1];
+        const spire = Math.min(14, 3 + b.h * 0.18);
+        return (
+          <group key={b.path} position={[b.x, b.h + 0.5, b.z]}>
+            <mesh position={[0, spire / 2, 0]} raycast={() => null}>
+              <cylinderGeometry args={[0.08, Math.min(top.w, top.d) * 0.12, spire, 6]} />
+              <meshStandardMaterial color={dark ? '#0f172a' : '#64748b'} emissive={b.color} emissiveIntensity={dark ? 1.2 : 0.2} metalness={0.8} roughness={0.3} />
+            </mesh>
+            <mesh position={[0, spire + 0.3, 0]} material={beaconMat} raycast={() => null}>
+              <sphereGeometry args={[0.38, 10, 10]} />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+export const LOT_SIZE = LOT;
