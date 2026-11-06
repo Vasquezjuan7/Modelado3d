@@ -294,3 +294,40 @@ export function analyzeCodeLocally(code: string, fileName: string): AuditResult 
   };
 }
 
+export function sevRank(s: Severity | 'CLEAN'): number {
+  return s === 'CRITICAL' ? 4 : s === 'HIGH' ? 3 : s === 'MEDIUM' ? 2 : s === 'LOW' ? 1 : 0;
+}
+
+function computeScore(issues: DetectedIssue[]): number {
+  // Diminishing returns per kind of issue: 20 identical warnings ≠ 20 different bugs
+  const groups = new Map<string, { w: number; n: number }>();
+  for (const i of issues) {
+    const key = i.title.replace(/\s*\(×\d+\)$/, '');
+    const w = i.severity === 'CRITICAL' ? 22 : i.severity === 'HIGH' ? 12 : i.severity === 'MEDIUM' ? 5 : 1.5;
+    const n = Number(i.title.match(/\(×(\d+)\)$/)?.[1] || 1);
+    const g = groups.get(key) || { w, n: 0 };
+    g.w = Math.max(g.w, w);
+    g.n += n;
+    groups.set(key, g);
+  }
+  let penalty = 0;
+  for (const g of groups.values()) penalty += Math.min(g.w * 3, g.w * (1 + Math.log2(g.n)));
+  return Math.max(0, Math.round(100 - penalty));
+}
+
+/** Collapse repeated low-impact findings into a single entry */
+function collapseRepeats(issues: DetectedIssue[]): DetectedIssue[] {
+  const byTitle = new Map<string, DetectedIssue[]>();
+  for (const i of issues) {
+    if (!byTitle.has(i.title)) byTitle.set(i.title, []);
+    byTitle.get(i.title)!.push(i);
+  }
+  const out: DetectedIssue[] = [];
+  for (const [title, list] of byTitle) {
+    if (list.length > 3 && (list[0].severity === 'LOW' || list[0].severity === 'MEDIUM')) {
+      out.push({ ...list[0], title: `${title} (×${list.length})`, message: `${list[0].message} (${list.length} apariciones; primera en la línea ${list[0].line})` });
+    } else out.push(...list);
+  }
+  return out;
+}
+
