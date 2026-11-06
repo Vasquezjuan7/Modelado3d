@@ -104,3 +104,37 @@ function countSloc(lines: string[], ext: string): number {
   return sloc;
 }
 
+const FUNCTION_PATTERNS: Array<{ exts: string[]; re: RegExp }> = [
+  {
+    exts: ['ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'vue', 'svelte', 'astro'],
+    re: /\bfunction\s*\*?\s*[\w$]*\s*\(|(?:const|let|var)\s+[\w$]+\s*=\s*(?:async\s*)?(?:\([^)]*\)|[\w$]+)\s*=>|^\s*(?:public|private|protected|static|async|get|set|\s)*[\w$]+\s*\([^)]*\)\s*(?::\s*[\w<>[\]|, .]+)?\s*\{/gm,
+  },
+  { exts: ['py'], re: /^\s*(?:async\s+)?def\s+\w+/gm },
+  { exts: ['rb'], re: /^\s*def\s+[\w.?!]+/gm },
+  { exts: ['go'], re: /^func\s+/gm },
+  { exts: ['rs'], re: /\bfn\s+\w+/g },
+  { exts: ['php'], re: /\bfunction\s+\w+/g },
+  { exts: ['java', 'cs', 'kt', 'kts', 'scala', 'swift', 'dart', 'c', 'cc', 'cpp', 'h', 'hpp'], re: /^\s*(?:(?:public|private|protected|internal|static|final|override|virtual|async|suspend|open|fun|func|def|inline|const|extern)\s+)*[\w<>[\],.?*&]+\s+\*?\w+\s*\([^;{)]*\)?\s*(?:throws [\w, ]+)?\s*\{?\s*$/gm },
+  { exts: ['kt', 'kts'], re: /\bfun\s+[\w.<>]+\s*\(/g },
+  { exts: ['swift'], re: /\bfunc\s+\w+/g },
+  { exts: ['lua'], re: /\bfunction\s+[\w.:]+/g },
+  { exts: ['ex', 'exs'], re: /^\s*defp?\s+\w+/gm },
+  { exts: ['sh', 'bash', 'zsh'], re: /^\s*(?:function\s+)?\w+\s*\(\)\s*\{/gm },
+  { exts: ['ps1'], re: /^\s*function\s+[\w-]+/gim },
+  { exts: ['sql'], re: /\bcreate\s+(?:or\s+replace\s+)?(?:function|procedure|trigger|view)\b/gi },
+];
+
+const CONTROL_KEYWORDS = /^\s*(if|for|while|switch|catch|return|else|do|try|new|throw|typeof|await)\b/;
+
+function countFunctions(content: string, ext: string): number {
+  let total = 0;
+  for (const { exts, re } of FUNCTION_PATTERNS) {
+    if (!exts.includes(ext)) continue;
+    const matches = content.match(re);
+    if (!matches) continue;
+    total += matches.filter((m) => !CONTROL_KEYWORDS.test(m)).length;
+    break; // first matching rule per extension
+  }
+  return total;
+}
+
