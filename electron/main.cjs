@@ -175,3 +175,11 @@ ipcMain.handle('nexus:scan', async (_e, dir) => {
   return { entries, truncated };
 });
 
+ipcMain.handle('nexus:writeFile', async (_e, absPath, content) => {
+  if (typeof absPath !== 'string' || typeof content !== 'string') throw new Error('Parámetros no válidos.');
+  if (!isInsideAllowed(absPath)) throw new Error('Ruta fuera del proyecto abierto.');
+  const backup = absPath + '.codecity.bak';
+  if (fs.existsSync(absPath) && !fs.existsSync(backup)) fs.copyFileSync(absPath, backup);
+  fs.writeFileSync(absPath, content, 'utf-8');
+});
+
