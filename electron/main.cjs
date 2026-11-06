@@ -21,6 +21,18 @@ if (isMac) {
   Menu.setApplicationMenu(null);
 }
 
+// Apps launched from Finder / desktop launchers get a minimal PATH: add the usual git locations
+const EXTRA_PATHS = isMac
+  ? ['/opt/homebrew/bin', '/usr/local/bin', '/usr/bin']
+  : process.platform === 'linux'
+    ? ['/usr/local/bin', '/usr/bin', '/snap/bin']
+    : [];
+const gitEnv = {
+  ...process.env,
+  PATH: [...EXTRA_PATHS, process.env.PATH || ''].filter(Boolean).join(path.delimiter),
+  GIT_TERMINAL_PROMPT: '0',
+};
+
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 
@@ -105,9 +117,9 @@ ipcMain.handle('nexus:clone', async (event, url, branch) => {
 
   event.sender.send('nexus:progress', 'Ejecutando git clone --depth 1…');
   await new Promise((resolve, reject) => {
-    const child = execFile('git', args, { timeout: 5 * 60 * 1000, windowsHide: true, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }, (err, _out, stderr) => {
+    const child = execFile('git', args, { timeout: 5 * 60 * 1000, windowsHide: true, env: gitEnv }, (err, _out, stderr) => {
       if (err) {
-        if (err.code === 'ENOENT') reject(new Error('Git no está instalado en este equipo.'));
+        if (err.code === 'ENOENT') reject(new Error(isMac ? 'Git no está instalado (instálalo con: xcode-select --install o brew install git).' : 'Git no está instalado en este equipo.'));
         else reject(new Error((stderr || err.message).trim().split('\n').slice(-2).join(' ')));
       } else resolve();
     });
@@ -118,7 +130,7 @@ ipcMain.handle('nexus:clone', async (event, url, branch) => {
   });
 
   allowedRoots.add(dest);
-  const git = (a) => new Promise((resolve) => execFile('git', ['-C', dest, ...a], { windowsHide: true }, (err, out) => resolve(err ? '' : String(out).trim())));
+  const git = (a) => new Promise((resolve) => execFile('git', ['-C', dest, ...a], { windowsHide: true, env: gitEnv }, (err, out) => resolve(err ? '' : String(out).trim())));
   const [realBranch, commit] = await Promise.all([git(['rev-parse', '--abbrev-ref', 'HEAD']), git(['rev-parse', 'HEAD'])]);
   return { dir: dest, branch: realBranch || branch || 'HEAD', commit };
 });
