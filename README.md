@@ -15,9 +15,28 @@ La app arranca vacía: **tú eliges el repositorio** (URL de GitHub, `usuario/re
 ```bash
 npm install
 npm run dev            # versión web en http://localhost:5173
-npm run electron:dev   # app de escritorio en modo desarrollo
-npm run dist           # genera release/*.exe (portable + instalador)
+npm run electron:dev   # app de escritorio en modo desarrollo (Windows, macOS y Linux)
+npm run dist           # instaladores para el sistema actual, en release/
 ```
+
+## Windows, macOS y Linux
+
+| Sistema | Comando | Genera |
+|---------|---------|--------|
+| Windows 10/11 x64 | `npm run dist:win` | instalador NSIS `…-win-x64.exe` y versión portable `…-win-portable.exe` |
+| macOS 11+ (Intel y Apple Silicon) | `npm run dist:mac` | `…-mac-x64.dmg`, `…-mac-arm64.dmg` y `.zip` |
+| Linux x64 | `npm run dist:linux` | `.AppImage`, `.deb` (depende de `git`) y `.tar.gz` |
+
+Cada instalador se compila en su propio sistema: el `.dmg` solo puede generarse en un Mac. Para obtener los tres sin tener cada sistema, usa **GitHub Actions** (`.github/workflows/build.yml`):
+
+- **Actions → Build desktop apps → Run workflow**: compila en Windows, macOS y Ubuntu y deja los instaladores como artefactos de la ejecución.
+- Subir una etiqueta (`git tag v2.0.1 && git push origin v2.0.1`) además los publica en una *Release* de GitHub.
+
+Notas por sistema:
+
+- **macOS**: la app no está firmada con un certificado de Apple. La primera vez, haz clic derecho sobre la app → *Abrir*, o ejecuta `xattr -cr "/Applications/CodeCity Nexus 3D.app"`. Para clonar repositorios hace falta git (`xcode-select --install` o `brew install git`); sin git, los repos de GitHub se cargan por la API.
+- **Linux**: `chmod +x CodeCity-Nexus-3D-*.AppImage && ./CodeCity-Nexus-3D-*.AppImage`, o `sudo apt install ./CodeCity-Nexus-3D-*.deb`.
+- **Windows**: SmartScreen o el Control inteligente de aplicaciones pueden avisar, porque el ejecutable no está firmado.
 
 | Modo | Cómo carga el repositorio |
 |------|---------------------------|
