@@ -33,3 +33,48 @@ declare global {
 export const desktop: DesktopBridge | undefined = typeof window !== 'undefined' ? window.nexusDesktop : undefined;
 export const isDesktop = Boolean(desktop?.isDesktop);
 
+export interface RepoInfo {
+  source: 'github' | 'git' | 'local';
+  /** owner/repo or folder name */
+  slug: string;
+  displayName: string;
+  url?: string;
+  branch: string;
+  commit?: string;
+  description?: string;
+  stars?: number;
+  defaultBranch?: string;
+  localDir?: string;
+  truncated: boolean;
+  skippedFiles: number;
+  loadedAt: number;
+}
+
+export interface LoadedRepo {
+  info: RepoInfo;
+  files: RepoFile[];
+  edges: DependencyEdge[];
+}
+
+export interface LoadProgress {
+  phase: 'resolve' | 'tree' | 'download' | 'clone' | 'scan' | 'analyze' | 'done';
+  message: string;
+  done?: number;
+  total?: number;
+}
+
+export interface ParsedRepoInput {
+  kind: 'github' | 'git';
+  owner?: string;
+  repo?: string;
+  branch?: string;
+  subPath?: string;
+  cloneUrl: string;
+}
+
+/** Maximum buildings in the city (keeps the 3D scene fluid) */
+export const MAX_FILES = 1500;
+/** Maximum files whose content is downloaded in web mode */
+const MAX_CONTENT_DOWNLOADS = 900;
+const MAX_CONTENT_SIZE = 400_000;
+
