@@ -13,7 +13,7 @@ $tempOutputDir = "$env:LOCALAPPDATA\Temp\codecity-build"
 $projectReleaseDir = Join-Path $PSScriptRoot "release"
 
 Write-Host ">>> [2/3] Empaquetando ejecutables de escritorio para Windows (NSIS + Portable)..." -ForegroundColor Cyan
-npx electron-builder --win --config.directories.output="$tempOutputDir"
+npx electron-builder --win --publish never --config.directories.output="$tempOutputDir"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error durante el empaquetado con electron-builder." -ForegroundColor Red
     exit $LASTEXITCODE

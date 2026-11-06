@@ -1,7 +1,7 @@
 {
   "name": "codecity-nexus-3d",
   "productName": "CodeCity Nexus 3D",
-  "description": "Spatial Architecture Engine & 3D AST CodeCity Visualizer",
+  "description": "Convierte cualquier repositorio en una ciudad 3D navegable y audítalo con IA",
   "version": "2.0.0",
   "private": true,
   "type": "module",
@@ -14,23 +14,28 @@
     "electron:dev": "cross-env NODE_ENV=development concurrently \"npm run dev\" \"wait-on tcp:5173 && electron .\"",
     "electron:start": "electron .",
     "pack": "npm run build && electron-builder --dir",
-    "dist": "powershell -ExecutionPolicy Bypass -File ./build-desktop.ps1",
-    "pack:desktop": "powershell -ExecutionPolicy Bypass -File ./build-desktop.ps1",
-    "electron:build": "powershell -ExecutionPolicy Bypass -File ./build-desktop.ps1"
+    "dist": "npm run build && electron-builder --publish never",
+    "dist:win": "npm run build && electron-builder --win --publish never",
+    "dist:mac": "npm run build && electron-builder --mac --publish never",
+    "dist:linux": "npm run build && electron-builder --linux --publish never"
   },
   "build": {
     "appId": "com.codecity.nexus3d",
     "productName": "CodeCity Nexus 3D",
     "copyright": "Copyright © 2026 CodeCity",
+    "artifactName": "CodeCity-Nexus-3D-${version}-${os}-${arch}.${ext}",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
       "electron/**/*",
+      "build/icon.png",
       "package.json"
     ],
     "win": {
+      "icon": "build/icon.png",
       "target": [
         {
           "target": "nsis",
@@ -46,6 +51,9 @@
         }
       ]
     },
+    "portable": {
+      "artifactName": "CodeCity-Nexus-3D-${version}-win-portable.${ext}"
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
@@ -53,35 +61,107 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "CodeCity Nexus 3D"
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "identity": "-"
+    },
+    "dmg": {
+      "title": "CodeCity Nexus 3D"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Development",
+      "synopsis": "Ciudad 3D de tu código con auditoría IA",
+      "maintainer": "Vasquezz <juanvasquezsanchez2006@gmail.com>",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "desktop": {
+        "entry": {
+          "Name": "CodeCity Nexus 3D",
+          "Comment": "Ciudad 3D de tu código con auditoría IA",
+          "StartupWMClass": "CodeCity Nexus 3D"
+        }
+      }
+    },
+    "deb": {
+      "depends": [
+        "git"
+      ]
     }
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
     "@react-three/postprocessing": "^3.1.1",
     "@supabase/supabase-js": "^2.118.0",
-    "@types/three": "^0.185.4",
-    "lucide-react": "^1.41.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "three": "^0.185.1"
-  },
-  "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "@types/three": "^0.185.4",
     "@vitejs/plugin-react": "^6.1.0",
     "autoprefixer": "^10.5.5",
     "concurrently": "^10.0.5",
     "cross-env": "^10.1.0",
     "electron": "^44.2.0",
     "electron-builder": "^26.15.3",
+    "lucide-react": "^1.41.0",
     "oxlint": "^1.79.0",
     "postcss": "^8.5.28",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "tailwindcss": "^4.3.3",
+    "three": "^0.185.1",
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
     "wait-on": "^9.1.0"
+  },
+  "author": {
+    "name": "Vasquezz",
+    "email": "juanvasquezsanchez2006@gmail.com"
+  },
+  "homepage": "https://github.com/Vasquezjuan7/Modelado3d",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Vasquezjuan7/Modelado3d.git"
   }
 }
