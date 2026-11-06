@@ -189,3 +189,19 @@ ipcMain.handle('nexus:openPath', async (_e, p) => {
   if (isInsideAllowed(p) || allowedRoots.has(path.resolve(p))) await shell.openPath(p);
 });
 
+app.whenReady().then(() => {
+  createWindow();
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+
+app.on('window-all-closed', () => {
+  // Clean temporary clones
+  try {
+    fs.rmSync(cloneRoot, { recursive: true, force: true });
+  } catch {
+    /* ignore */
+  }
+  if (process.platform !== 'darwin') app.quit();
+});
