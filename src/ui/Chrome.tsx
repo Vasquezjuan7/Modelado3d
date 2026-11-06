@@ -156,3 +156,40 @@ export function TopBar({
   );
 }
 
+// ---------------------------------------------------------------
+// Bottom dock (camera + view toggles)
+// ---------------------------------------------------------------
+export function Dock({
+  t, onPreset, showLabels, setShowLabels, showArcs, setShowArcs, autoRotate, setAutoRotate, quality, setQuality,
+}: {
+  t: Dict;
+  onPreset: (p: 'iso' | 'top' | 'front') => void;
+  showLabels: boolean;
+  setShowLabels: (v: boolean) => void;
+  showArcs: boolean;
+  setShowArcs: (v: boolean) => void;
+  autoRotate: boolean;
+  setAutoRotate: (v: boolean) => void;
+  quality: 'high' | 'low';
+  setQuality: (q: 'high' | 'low') => void;
+}) {
+  const toggle = (on: boolean) => `seg-item flex items-center gap-1.5 ${on ? 'seg-item-active' : ''}`;
+  return (
+    <div className="panel pointer-events-auto flex items-center gap-2 p-1.5">
+      <div className="flex items-center gap-1 pl-2 text-slate-400"><Camera className="h-3.5 w-3.5" /></div>
+      <div className="seg">
+        <button className="seg-item" onClick={() => onPreset('iso')}>{t.iso}</button>
+        <button className="seg-item" onClick={() => onPreset('top')}>{t.top}</button>
+        <button className="seg-item" onClick={() => onPreset('front')}>{t.front}</button>
+      </div>
+      <div className="h-5 w-px bg-slate-200 dark:bg-white/10" />
+      <div className="seg">
+        <button className={toggle(showLabels)} onClick={() => setShowLabels(!showLabels)}><Tag className="h-3.5 w-3.5" />{t.labels}</button>
+        <button className={toggle(showArcs)} onClick={() => setShowArcs(!showArcs)}><Waypoints className="h-3.5 w-3.5" />{t.arcs}</button>
+        <button className={toggle(autoRotate)} onClick={() => setAutoRotate(!autoRotate)}><RotateCw className="h-3.5 w-3.5" />{t.rotate}</button>
+        <button className={toggle(quality === 'high')} onClick={() => setQuality(quality === 'high' ? 'low' : 'high')}><Gauge className="h-3.5 w-3.5" />{quality === 'high' ? 'HD' : 'Eco'}</button>
+      </div>
+    </div>
+  );
+}
+
