@@ -264,3 +264,11 @@ export function buildCity(files: RepoFile[]): CityModel {
 }
 
 /** Risk colour ramp: green (healthy) → amber → red (critical) */
+export function riskColor(score: number | undefined): string {
+  if (score === undefined) return '#475569';
+  if (score >= 90) return '#22c55e';
+  if (score >= 75) return '#a3e635';
+  if (score >= 55) return '#facc15';
+  if (score >= 35) return '#fb923c';
+  return '#ef4444';
+}
