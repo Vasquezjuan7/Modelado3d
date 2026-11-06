@@ -198,3 +198,99 @@ const RULES: Rule[] = [
   },
 ];
 
+const LOOP_RE = /\b(for\s*\(|for\s+\w+\s+(in|of)\b|for\s+\w+\s+in\s+|while\s*\(|\.forEach\s*\(|\.map\s*\(\s*async)/;
+const IO_RE = /(\.query\(|\.find(One|Many|ById)?\(|\.execute\(|\.findUnique\(|\.get\(\s*['"`]\/|fetch\(|axios\.(get|post)|requests\.(get|post)|\.objects\.(get|filter)\(|cursor\.execute\()/;
+
+export function analyzeCodeLocally(code: string, fileName: string): AuditResult {
+  const started = performance.now();
+  const lines = code.split(/\r?\n/);
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  const issues: DetectedIssue[] = [];
+  const seen = new Set<string>();
+  const push = (i: DetectedIssue) => {
+    const key = i.title + ':' + i.line;
+    if (!seen.has(key)) {
+      seen.add(key);
+      issues.push(i);
+    }
+  };
+
+  let loopDepthUntil = -1;
+  let anyCount = 0;
+  let inBlockComment = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (inBlockComment) {
+      if (trimmed.includes('*/')) inBlockComment = false;
+      continue;
+    }
+    if (trimmed.startsWith('/*') && !trimmed.includes('*/')) {
+      inBlockComment = true;
+      continue;
+    }
+    if (trimmed.startsWith('//') || trimmed.startsWith('#') || trimmed.startsWith('*')) continue;
+
+    for (const r of RULES) {
+      if (r.exts && !r.exts.includes(ext)) continue;
+      if (r.skip && r.skip.test(line)) continue;
+      if (r.re.test(line)) {
+        push({ line: i + 1, type: r.type, severity: r.severity, title: r.title, message: r.message, snippet: trimmed.slice(0, 200), fix: r.fix });
+      }
+    }
+
+    if (LOOP_RE.test(line)) loopDepthUntil = i + 12;
+    if (i <= loopDepthUntil && !LOOP_RE.test(line) && IO_RE.test(line) && /\bawait\b|\.then\(|\bfetch\(|cursor/.test(line)) {
+      push({
+        line: i + 1, type: 'performance', severity: 'HIGH', title: 'Consulta / petición dentro de un bucle (N+1)',
+        message: 'Se realiza una operación de I/O por cada iteración. Con N elementos se generan N viajes a la base de datos o a la red.',
+        snippet: trimmed.slice(0, 200), fix: 'Agrupa en una sola consulta (IN / JOIN / batch) o usa Promise.all con concurrencia limitada.',
+      });
+    }
+
+    if ((ext === 'ts' || ext === 'tsx') && /:\s*any\b|as\s+any\b|<any>/.test(line)) anyCount++;
+  }
+
+  if (anyCount >= 5) {
+    push({
+      line: 1, type: 'type-safety', severity: 'MEDIUM', title: `Uso extendido de "any" (${anyCount}×)`,
+      message: 'El tipo any desactiva la comprobación de TypeScript y oculta errores en tiempo de compilación.',
+      snippet: `${anyCount} apariciones de any`, fix: 'Define interfaces o usa unknown con narrowing.',
+    });
+  }
+  if (lines.length > 600) {
+    push({
+      line: 1, type: 'architecture', severity: lines.length > 1200 ? 'HIGH' : 'MEDIUM', title: 'Archivo monolítico (God Object)',
+      message: `El archivo tiene ${lines.length} líneas. Es difícil de mantener y probablemente mezcla varias responsabilidades.`,
+      snippet: `${lines.length} líneas`, fix: 'Divide el módulo por responsabilidades (componentes, servicios, utilidades).',
+    });
+  }
+  const longLines = lines.filter((l) => l.length > 220).length;
+  if (longLines > 10 && !/\.(json|md|lock|svg|html)$/.test(fileName)) {
+    push({
+      line: 1, type: 'maintainability', severity: 'LOW', title: 'Líneas excesivamente largas',
+      message: `${longLines} líneas superan los 220 caracteres; dificulta la lectura y las revisiones.`, snippet: '', fix: 'Configura Prettier/formatter.',
+    });
+  }
+
+  const finalIssues = collapseRepeats(issues).sort((a, b) => sevRank(b.severity) - sevRank(a.severity) || a.line - b.line);
+  const severity = finalIssues.length ? finalIssues[0].severity : 'CLEAN';
+  const score = computeScore(finalIssues);
+  return {
+    title: finalIssues.length ? finalIssues[0].title : 'Sin problemas detectados',
+    severity,
+    summary: finalIssues.length
+      ? `El escáner offline encontró ${finalIssues.length} hallazgo(s) en ${fileName}. Para una revisión profunda y un refactor automático conecta Gemini u OpenAI.`
+      : `No se detectaron patrones de riesgo conocidos en ${fileName}.`,
+    score,
+    issues: finalIssues,
+    refactoredCode: null,
+    explanation: 'Análisis heurístico local basado en reglas (inyección SQL, XSS, secretos, N+1, eval, deserialización, tamaño de módulo…).',
+    provider: 'local',
+    modelName: 'Escáner heurístico offline',
+    durationMs: Math.round(performance.now() - started),
+  };
+}
+
