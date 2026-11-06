@@ -120,3 +120,80 @@ export function Buildings({ city, dark, colorMode, riskByPath, languageByPath, s
   );
 }
 
+// ---------------------------------------------------------------
+// Block plinths (sidewalks) and parks
+// ---------------------------------------------------------------
+export function Blocks({ city, dark, activeDistrict }: { city: CityModel; dark: boolean; activeDistrict: DistrictKey | null }) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const { material } = useMemo(() => createCityMaterial({ windows: false, dark }), [dark]);
+  const geometry = useMemo(() => {
+    const g = new THREE.BoxGeometry(1, 1, 1);
+    const n = city.blocks.length;
+    g.setAttribute('aColor', new THREE.InstancedBufferAttribute(new Float32Array(n * 3), 3));
+    g.setAttribute('aSeed', new THREE.InstancedBufferAttribute(new Float32Array(n), 1));
+    g.setAttribute('aState', new THREE.InstancedBufferAttribute(new Float32Array(n), 1));
+    return g;
+  }, [city]);
+
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    const m = new THREE.Matrix4();
+    const col = geometry.getAttribute('aColor') as THREE.InstancedBufferAttribute;
+    const st = geometry.getAttribute('aState') as THREE.InstancedBufferAttribute;
+    const c = new THREE.Color();
+    city.blocks.forEach((b, i) => {
+      m.makeScale(BLOCK, 0.5, BLOCK);
+      m.setPosition(b.x, 0.25, b.z);
+      mesh.setMatrixAt(i, m);
+      c.set(b.park ? '#22c55e' : DISTRICTS[b.district].color);
+      col.setXYZ(i, c.r * 0.55, c.g * 0.55, c.b * 0.55);
+      st.setX(i, activeDistrict && b.district !== activeDistrict ? 3 : 0);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    col.needsUpdate = true;
+    st.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [city, geometry, activeDistrict]);
+
+  const parks = city.blocks.filter((b) => b.park);
+  const trees = useMemo(() => {
+    const out: Array<[number, number, number]> = [];
+    parks.forEach((p, pi) => {
+      for (let i = 0; i < 14; i++) {
+        const a = (i * 2.399 + pi) % (Math.PI * 2);
+        const r = 3 + ((i * 37) % 9);
+        out.push([p.x + Math.cos(a) * r, 0.5, p.z + Math.sin(a) * r]);
+      }
+    });
+    return out;
+  }, [parks]);
+
+  return (
+    <group>
+      <instancedMesh key={city.blocks.length + (dark ? 'd' : 'l')} ref={meshRef} args={[geometry, material, city.blocks.length]} raycast={() => null} />
+      {trees.length > 0 && <Trees positions={trees} dark={dark} />}
+    </group>
+  );
+}
+
+function Trees({ positions, dark }: { positions: Array<[number, number, number]>; dark: boolean }) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  useEffect(() => {
+    const m = new THREE.Matrix4();
+    positions.forEach((p, i) => {
+      const s = 0.8 + ((i * 13) % 7) / 10;
+      m.makeScale(s, s * 1.6, s);
+      m.setPosition(p[0], p[1] + 1.4 * s, p[2]);
+      ref.current?.setMatrixAt(i, m);
+    });
+    if (ref.current) ref.current.instanceMatrix.needsUpdate = true;
+  }, [positions]);
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, positions.length]} raycast={() => null}>
+      <coneGeometry args={[1, 2, 7]} />
+      <meshStandardMaterial color={dark ? '#14532d' : '#4ade80'} emissive={dark ? '#16a34a' : '#000000'} emissiveIntensity={dark ? 0.35 : 0} roughness={0.8} />
+    </instancedMesh>
+  );
+}
+
