@@ -55,3 +55,104 @@ export function LoadingOverlay({ t, progress, target, onCancel }: { t: Dict; pro
   );
 }
 
+// ---------------------------------------------------------------
+// Top bar
+// ---------------------------------------------------------------
+export function TopBar({
+  t, info, aiConfig, user, dark, lang, onBack, onSearch, onReport, onSettings, onAuth, onLogout, onToggleTheme, onToggleLang,
+}: {
+  t: Dict;
+  info: RepoInfo | null;
+  aiConfig: AIConfig;
+  user: UserProfile | null;
+  dark: boolean;
+  lang: 'es' | 'en';
+  onBack?: () => void;
+  onSearch?: () => void;
+  onReport?: () => void;
+  onSettings: () => void;
+  onAuth: () => void;
+  onLogout: () => void;
+  onToggleTheme: () => void;
+  onToggleLang: () => void;
+}) {
+  const [menu, setMenu] = useState(false);
+  const ready = isAIReady(aiConfig);
+  const aiLabel = aiConfig.provider === 'local' ? t.aiLocal : ready ? (aiConfig.provider === 'gemini' ? aiConfig.geminiModel : aiConfig.openaiModel) : t.aiNotConfigured;
+
+  return (
+    <header className="pointer-events-auto absolute inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200/80 bg-white/75 px-4 backdrop-blur-xl dark:border-white/[0.06] dark:bg-ink-950/70">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-cyan-400 to-indigo-500 shadow-[0_0_20px_-4px_rgba(34,211,238,0.7)]">
+          <Box className="h-4 w-4 text-white" strokeWidth={2.4} />
+        </div>
+        <div className="leading-none">
+          <div className="font-display text-[14px] font-semibold tracking-tight text-slate-900 dark:text-white">CodeCity <span className="text-gradient">Nexus</span></div>
+          <div className="mt-0.5 text-[10px] text-slate-500">{t.tagline}</div>
+        </div>
+      </div>
+
+      {info && (
+        <>
+          <div className="mx-1 h-6 w-px bg-slate-200 dark:bg-white/10" />
+          <button onClick={onBack} className="btn-icon btn" title={t.changeRepo}><ArrowLeft className="h-4 w-4" /></button>
+          <div className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-1.5 dark:border-white/[0.07] dark:bg-white/[0.03]">
+            <GitBranch className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+            <span className="truncate font-mono text-[12.5px] font-medium text-slate-800 dark:text-slate-100">{info.displayName}</span>
+            <span className="hidden shrink-0 font-mono text-[11px] text-slate-500 lg:inline">@{info.branch}{info.commit ? ` · ${info.commit.slice(0, 7)}` : ''}</span>
+            {info.stars !== undefined && (
+              <span className="hidden shrink-0 items-center gap-1 text-[11px] text-amber-500 lg:flex"><Star className="h-3 w-3 fill-current" />{info.stars.toLocaleString()}</span>
+            )}
+            {info.url && (
+              <a href={info.url} target="_blank" rel="noreferrer" className="shrink-0 text-slate-400 hover:text-cyan-500"><ExternalLink className="h-3.5 w-3.5" /></a>
+            )}
+          </div>
+        </>
+      )}
+
+      <div className="flex-1" />
+
+      {info && onSearch && (
+        <button onClick={onSearch} className="btn btn-ghost hidden w-64 justify-between text-slate-500 md:flex">
+          <span className="flex items-center gap-2"><Search className="h-4 w-4" />{t.search}</span>
+          <span className="flex items-center gap-0.5"><span className="kbd">Ctrl</span><span className="kbd">K</span></span>
+        </button>
+      )}
+      {info && onReport && (
+        <button onClick={onReport} className="btn btn-ghost"><FileText className="h-4 w-4 text-indigo-400" /><span className="hidden xl:inline">{t.report}</span></button>
+      )}
+
+      <button onClick={onSettings} className="btn btn-ghost" title={t.settings}>
+        <span className={`h-2 w-2 rounded-full ${aiConfig.provider === 'local' ? 'bg-slate-400' : ready ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-amber-400'}`} />
+        <Cpu className="h-4 w-4" />
+        <span className="hidden max-w-[150px] truncate font-mono text-[11.5px] lg:inline">{aiLabel}</span>
+      </button>
+      <button onClick={onToggleLang} className="btn-icon btn font-mono text-[11px] font-semibold" title="ES / EN"><Languages className="hidden h-4 w-4" />{lang.toUpperCase()}</button>
+      <button onClick={onToggleTheme} className="btn-icon btn">{dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
+
+      {user ? (
+        <div className="relative">
+          <button onClick={() => setMenu((m) => !m)} className="btn btn-ghost pl-1.5">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-pink-500 text-[11px] font-bold text-white">{user.fullName.slice(0, 1).toUpperCase()}</span>
+            <span className="hidden max-w-[110px] truncate lg:inline">{user.fullName}</span>
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+          {menu && (
+            <div className="panel animate-rise absolute right-0 mt-2 w-60 p-2" onMouseLeave={() => setMenu(false)}>
+              <div className="px-2 py-1.5">
+                <div className="text-[13px] font-semibold text-slate-900 dark:text-white">{user.fullName}</div>
+                <div className="text-[11.5px] text-slate-500">{user.email}</div>
+                <div className="mt-1.5 text-[11px] text-slate-500">{user.role} · {user.isLocalGuest ? t.localAccount : t.cloudAccount}</div>
+              </div>
+              <button onClick={() => { setMenu(false); onLogout(); }} className="btn mt-1 w-full justify-start text-red-500 hover:bg-red-500/10"><LogOut className="h-4 w-4" />{t.logout}</button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <button onClick={onAuth} className="btn btn-ghost"><LogIn className="h-4 w-4" /><span className="hidden lg:inline">{t.login}</span></button>
+      )}
+      <button onClick={onSettings} className="btn-icon btn" title={t.settings}><Settings className="h-4 w-4" /></button>
+    </header>
+  );
+}
+
