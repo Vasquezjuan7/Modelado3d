@@ -103,3 +103,54 @@ function CameraRig({ city, command }: { city: CityModel; command: CameraCommand 
   return null;
 }
 
+function DistrictLabels({ city, dark, lang, activeDistrict }: { city: CityModel; dark: boolean; lang: 'es' | 'en'; activeDistrict: DistrictKey | null }) {
+  return (
+    <>
+      {city.districts.map((d) => {
+        const def = DISTRICTS[d.key];
+        const faded = activeDistrict && activeDistrict !== d.key;
+        return (
+          <Html key={d.key} position={[d.center[0], Math.min(city.maxHeight, 40) + 10, d.center[1]]} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none', opacity: faded ? 0.25 : 1, transition: 'opacity .3s' }}>
+            <div className={`whitespace-nowrap rounded-full border px-3 py-1 text-center backdrop-blur-md ${dark ? 'border-white/10 bg-black/55' : 'border-slate-300/70 bg-white/80 shadow-sm'}`}>
+              <div className="flex items-center gap-2 text-[11px] font-semibold tracking-wide" style={{ color: dark ? def.color : '#0f172a' }}>
+                <span className="h-2 w-2 rounded-full" style={{ background: def.color, boxShadow: `0 0 10px ${def.color}` }} />
+                {def.name[lang]}
+                <span className={`font-mono text-[10px] font-normal ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{d.count}</span>
+              </div>
+            </div>
+          </Html>
+        );
+      })}
+    </>
+  );
+}
+
+function HoverTag({ city, path, dark, lang }: { city: CityModel; path: string; dark: boolean; lang: 'es' | 'en' }) {
+  const b = city.byPath.get(path);
+  if (!b) return null;
+  return (
+    <Html position={[b.x, b.h + 2.5, b.z]} center zIndexRange={[20, 10]} style={{ pointerEvents: 'none' }}>
+      <div className={`whitespace-nowrap rounded-lg border px-2.5 py-1.5 font-mono text-[11px] shadow-xl backdrop-blur-md ${dark ? 'border-white/15 bg-[#0b0f1a]/90 text-slate-100' : 'border-slate-200 bg-white/95 text-slate-800'}`}>
+        <span className="font-semibold" style={{ color: dark ? b.color : undefined }}>{b.name}</span>
+        <span className="ml-2 opacity-60">{b.lines.toLocaleString()} {lang === 'es' ? 'líneas' : 'lines'}</span>
+      </div>
+    </Html>
+  );
+}
+
+function SelectionBeam({ city, path }: { city: CityModel; path: string | null }) {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    if (ref.current) (ref.current.material as THREE.MeshBasicMaterial).opacity = 0.18 + 0.1 * Math.sin(clock.elapsedTime * 3);
+  });
+  const b = path ? city.byPath.get(path) : null;
+  if (!b) return null;
+  const h = 160;
+  return (
+    <mesh ref={ref} position={[b.x, h / 2, b.z]} raycast={() => null}>
+      <cylinderGeometry args={[Math.max(b.w, b.d) * 0.55, Math.max(b.w, b.d) * 0.75, h, 24, 1, true]} />
+      <meshBasicMaterial color={b.color} transparent opacity={0.2} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
+    </mesh>
+  );
+}
+
