@@ -148,3 +148,119 @@ function makeTiers(w: number, d: number, h: number): Tier[] {
   return [{ w, d, h, y: h / 2 }];
 }
 
+export function buildCity(files: RepoFile[]): CityModel {
+  const groups = new Map<DistrictKey, RepoFile[]>();
+  for (const f of files) {
+    const k = classifyFile(f);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(f);
+  }
+
+  // District rectangles (in block units)
+  type Rect = { key: DistrictKey; files: RepoFile[]; blocks: number; cols: number; rows: number; gx: number; gz: number };
+  const rects: Rect[] = [];
+  for (const key of DISTRICT_ORDER) {
+    const list = groups.get(key);
+    if (!list?.length) continue;
+    list.sort((a, b) => b.lines - a.lines);
+    const blocks = Math.ceil(list.length / LOTS_PER_BLOCK);
+    const cols = Math.max(1, Math.ceil(Math.sqrt(blocks)));
+    const rows = Math.ceil(blocks / cols);
+    rects.push({ key, files: list, blocks, cols, rows, gx: 0, gz: 0 });
+  }
+
+  // Shelf packing: tallest rectangles first, row width ≈ sqrt(total area)
+  const totalArea = rects.reduce((s, r) => s + r.cols * r.rows, 0);
+  const targetW = Math.max(Math.ceil(Math.sqrt(totalArea * 1.25)), ...rects.map((r) => r.cols));
+  const sorted = [...rects].sort((a, b) => b.rows - a.rows || b.cols - a.cols);
+  let cx = 0;
+  let cz = 0;
+  let shelfH = 0;
+  for (const r of sorted) {
+    if (cx > 0 && cx + r.cols > targetW) {
+      cx = 0;
+      cz += shelfH;
+      shelfH = 0;
+    }
+    r.gx = cx;
+    r.gz = cz;
+    cx += r.cols;
+    shelfH = Math.max(shelfH, r.rows);
+  }
+  const gridW = Math.max(...sorted.map((r) => r.gx + r.cols));
+  const gridH = Math.max(...sorted.map((r) => r.gz + r.rows));
+  const offX = ((gridW - 1) * PITCH) / 2;
+  const offZ = ((gridH - 1) * PITCH) / 2;
+
+  const buildings: Building[] = [];
+  const blocks: CityBlock[] = [];
+  const districts: DistrictInfo[] = [];
+  let maxHeight = 0;
+
+  for (const r of rects) {
+    const def = DISTRICTS[r.key];
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    let lines = 0;
+    for (let b = 0; b < r.cols * r.rows; b++) {
+      const bx = (r.gx + (b % r.cols)) * PITCH - offX;
+      const bz = (r.gz + Math.floor(b / r.cols)) * PITCH - offZ;
+      const chunk = r.files.slice(b * LOTS_PER_BLOCK, (b + 1) * LOTS_PER_BLOCK);
+      blocks.push({ x: bx, z: bz, district: r.key, park: chunk.length === 0 });
+      minX = Math.min(minX, bx - BLOCK / 2);
+      maxX = Math.max(maxX, bx + BLOCK / 2);
+      minZ = Math.min(minZ, bz - BLOCK / 2);
+      maxZ = Math.max(maxZ, bz + BLOCK / 2);
+
+      chunk.forEach((f, i) => {
+        const lot = LOT_ORDER[i];
+        const lx = (lot % LOTS_PER_SIDE) - 1;
+        const lz = Math.floor(lot / LOTS_PER_SIDE) - 1;
+        const h = buildingHeight(f.lines);
+        const fp = buildingFootprint(f.functions, f.lines);
+        const aspect = 0.85 + ((f.path.length * 7) % 30) / 100; // deterministic variety
+        const w = fp;
+        const d = Math.min(LOT - 1.2, fp * aspect);
+        maxHeight = Math.max(maxHeight, h);
+        lines += f.lines;
+        buildings.push({
+          index: buildings.length,
+          path: f.path,
+          name: f.name,
+          district: r.key,
+          color: def.color,
+          x: bx + lx * LOT,
+          z: bz + lz * LOT,
+          w,
+          d,
+          h,
+          tiers: makeTiers(w, d, h),
+          lines: f.lines,
+          functions: f.functions,
+          landmark: false,
+        });
+      });
+    }
+    districts.push({ key: r.key, count: r.files.length, lines, center: [(minX + maxX) / 2, (minZ + maxZ) / 2], minX, maxX, minZ, maxZ });
+  }
+
+  // Landmarks: top 12 tallest buildings get rooftop detail
+  [...buildings].sort((a, b) => b.h - a.h).slice(0, 12).forEach((b) => (b.landmark = true));
+
+  const roadsX: number[] = [];
+  const roadsZ: number[] = [];
+  for (let i = 0; i <= gridW; i++) roadsX.push((i - 0.5) * PITCH - offX);
+  for (let j = 0; j <= gridH; j++) roadsZ.push((j - 0.5) * PITCH - offZ);
+
+  return {
+    buildings,
+    byPath: new Map(buildings.map((b) => [b.path, b])),
+    blocks,
+    districts,
+    bounds: { minX: roadsX[0], maxX: roadsX[roadsX.length - 1], minZ: roadsZ[0], maxZ: roadsZ[roadsZ.length - 1] },
+    roadsX,
+    roadsZ,
+    maxHeight,
+  };
+}
+
+/** Risk colour ramp: green (healthy) → amber → red (critical) */
