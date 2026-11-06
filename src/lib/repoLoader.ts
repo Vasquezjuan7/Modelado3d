@@ -124,3 +124,41 @@ export function parseRepoInput(raw: string): ParsedRepoInput | null {
   return null;
 }
 
+// --------------------------------------------------------
+// GitHub REST
+// --------------------------------------------------------
+async function gh<T>(path: string, token?: string, signal?: AbortSignal): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/vnd.github+json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`https://api.github.com${path}`, { headers, signal });
+  if (!res.ok) {
+    let msg = `GitHub respondió ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body?.message) msg += `: ${body.message}`;
+    } catch {
+      /* ignore */
+    }
+    if (res.status === 404) msg = 'Repositorio no encontrado o privado (revisa la URL o añade un token de GitHub en Ajustes).';
+    if (res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0') {
+      const reset = Number(res.headers.get('x-ratelimit-reset') || 0) * 1000;
+      const mins = reset ? Math.max(1, Math.ceil((reset - Date.now()) / 60000)) : 60;
+      msg = `Límite de la API de GitHub alcanzado (60 peticiones/hora sin token). Espera ~${mins} min o añade un token personal de GitHub en Ajustes.`;
+    }
+    throw new Error(msg);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function runPool<T>(items: T[], concurrency: number, worker: (item: T, idx: number) => Promise<void>, signal?: AbortSignal) {
+  let next = 0;
+  const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (next < items.length) {
+      if (signal?.aborted) throw new DOMException('Cancelado', 'AbortError');
+      const idx = next++;
+      await worker(items[idx], idx);
+    }
+  });
+  await Promise.all(runners);
+}
+
