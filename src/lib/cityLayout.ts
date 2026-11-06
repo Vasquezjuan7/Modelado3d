@@ -58,3 +58,56 @@ export function classifyFile(f: RepoFile): DistrictKey {
   return 'core';
 }
 
+export interface Tier {
+  w: number;
+  d: number;
+  h: number;
+  y: number; // center y
+}
+
+export interface Building {
+  index: number;
+  path: string;
+  name: string;
+  district: DistrictKey;
+  color: string;
+  x: number;
+  z: number;
+  w: number;
+  d: number;
+  h: number;
+  tiers: Tier[];
+  lines: number;
+  functions: number;
+  landmark: boolean;
+}
+
+export interface CityBlock {
+  x: number;
+  z: number;
+  district: DistrictKey;
+  park: boolean;
+}
+
+export interface DistrictInfo {
+  key: DistrictKey;
+  count: number;
+  lines: number;
+  center: [number, number];
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
+export interface CityModel {
+  buildings: Building[];
+  byPath: Map<string, Building>;
+  blocks: CityBlock[];
+  districts: DistrictInfo[];
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
+  roadsX: number[]; // x coordinate of roads running along Z
+  roadsZ: number[]; // z coordinate of roads running along X
+  maxHeight: number;
+}
+
