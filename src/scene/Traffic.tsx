@@ -262,3 +262,35 @@ export function DataPackets({
   );
 }
 
+// ---------------------------------------------------------------
+// Dependency arcs for the selected building
+// ---------------------------------------------------------------
+export function DependencyArcs({ city, edges, selected, dark }: { city: CityModel; edges: DependencyEdge[]; selected: string | null; dark: boolean }) {
+  const arcs = useMemo(() => {
+    if (!selected) return [];
+    const src = city.byPath.get(selected);
+    if (!src) return [];
+    const out: Array<{ key: string; start: THREE.Vector3; end: THREE.Vector3; mid: THREE.Vector3; color: string }> = [];
+    for (const e of edges) {
+      if (e.from !== selected && e.to !== selected) continue;
+      const other = city.byPath.get(e.from === selected ? e.to : e.from);
+      if (!other) continue;
+      const start = new THREE.Vector3(src.x, src.h + 1, src.z);
+      const end = new THREE.Vector3(other.x, other.h + 1, other.z);
+      const dist = start.distanceTo(end);
+      const mid = start.clone().lerp(end, 0.5);
+      mid.y = Math.max(start.y, end.y) + 6 + dist * 0.25;
+      out.push({ key: e.from + '>' + e.to, start, end, mid, color: e.from === selected ? (dark ? '#22d3ee' : '#0284c7') : (dark ? '#fbbf24' : '#d97706') });
+      if (out.length >= 80) break;
+    }
+    return out;
+  }, [city, edges, selected, dark]);
+
+  return (
+    <group>
+      {arcs.map((a) => (
+        <QuadraticBezierLine key={a.key} start={a.start} end={a.end} mid={a.mid} color={a.color} lineWidth={2} transparent opacity={0.9} dashed={false} />
+      ))}
+    </group>
+  );
+}
