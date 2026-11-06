@@ -52,3 +52,26 @@ export const IGNORED_DIRS = new Set([
 
 const IGNORED_FILES = /(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb|composer\.lock|Cargo\.lock|poetry\.lock|Gemfile\.lock|.*\.min\.(js|css)|.*\.map)$/i;
 
+export function getExtension(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower === 'dockerfile') return 'dockerfile';
+  if (lower === 'makefile') return 'mk';
+  const idx = lower.lastIndexOf('.');
+  return idx > 0 ? lower.slice(idx + 1) : '';
+}
+
+export function languageOf(ext: string): string {
+  return LANGUAGE_BY_EXT[ext] || (ext ? ext.toUpperCase() : 'Otro');
+}
+
+/** Decide whether a path is worth turning into a building */
+export function isRelevantFile(path: string, size: number): boolean {
+  const parts = path.split('/');
+  if (parts.some((p) => IGNORED_DIRS.has(p))) return false;
+  if (IGNORED_FILES.test(path)) return false;
+  const ext = getExtension(parts[parts.length - 1]);
+  if (!CODE_EXTENSIONS.has(ext)) return false;
+  if (size > 1_500_000) return false; // generated / data blobs
+  return true;
+}
+
