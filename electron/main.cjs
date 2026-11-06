@@ -69,3 +69,41 @@ function createWindow() {
   });
 }
 
+// ---------------------------------------------------------------
+// IPC: git clone (no shell, arguments validated)
+// ---------------------------------------------------------------
+ipcMain.handle('nexus:clone', async (event, url, branch) => {
+  if (typeof url !== 'string' || !/^(https?:\/\/|git@)[\w.@:/~+%-]+$/.test(url) || url.startsWith('-')) {
+    throw new Error('URL de repositorio no válida.');
+  }
+  if (branch !== undefined && branch !== null && (typeof branch !== 'string' || !/^[\w./-]+$/.test(branch) || branch.startsWith('-'))) {
+    throw new Error('Nombre de rama no válido.');
+  }
+  fs.mkdirSync(cloneRoot, { recursive: true });
+  const slug = url.replace(/\.git$/, '').split(/[/:]/).filter(Boolean).slice(-2).join('_').replace(/[^\w.-]/g, '_');
+  const dest = path.join(cloneRoot, `${slug}_${Date.now()}`);
+
+  const args = ['clone', '--depth', '1', '--single-branch', '--no-tags'];
+  if (branch) args.push('--branch', branch);
+  args.push('--', url, dest);
+
+  event.sender.send('nexus:progress', 'Ejecutando git clone --depth 1…');
+  await new Promise((resolve, reject) => {
+    const child = execFile('git', args, { timeout: 5 * 60 * 1000, windowsHide: true, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }, (err, _out, stderr) => {
+      if (err) {
+        if (err.code === 'ENOENT') reject(new Error('Git no está instalado en este equipo.'));
+        else reject(new Error((stderr || err.message).trim().split('\n').slice(-2).join(' ')));
+      } else resolve();
+    });
+    child.stderr?.on('data', (d) => {
+      const line = String(d).trim().split(/\r|\n/).pop();
+      if (line) event.sender.send('nexus:progress', line);
+    });
+  });
+
+  allowedRoots.add(dest);
+  const git = (a) => new Promise((resolve) => execFile('git', ['-C', dest, ...a], { windowsHide: true }, (err, out) => resolve(err ? '' : String(out).trim())));
+  const [realBranch, commit] = await Promise.all([git(['rev-parse', '--abbrev-ref', 'HEAD']), git(['rev-parse', 'HEAD'])]);
+  return { dir: dest, branch: realBranch || branch || 'HEAD', commit };
+});
+
