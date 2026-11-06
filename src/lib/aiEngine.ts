@@ -607,3 +607,31 @@ export async function testGeminiKey(apiKey: string, model: string): Promise<{ ok
   return { ok: true, ms: Math.round(performance.now() - t0), reply: reply || '(respuesta vacía)', model: used, note };
 }
 
+async function geminiGenerate(apiKey: string, model: string, prompt: string, schema: object | null, signal?: AbortSignal) {
+  const { data, model: used, note } = await geminiCall(apiKey, model, {
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.2,
+      maxOutputTokens: 32768,
+      responseMimeType: schema ? 'application/json' : 'text/plain',
+      ...(schema ? { responseSchema: schema } : {}),
+    },
+  }, signal);
+  const cand = data.candidates?.[0];
+  if (!cand) {
+    const block = data.promptFeedback?.blockReason;
+    throw new Error(block ? `Gemini bloqueó la petición (${block}).` : 'Gemini no devolvió ninguna respuesta.');
+  }
+  const text = (cand.content?.parts || []).filter((p: any) => !p.thought).map((p: any) => p.text || '').join('');
+  if (!text) throw new Error(`Gemini terminó sin contenido (motivo: ${cand.finishReason || 'desconocido'}).`);
+  if (cand.finishReason === 'MAX_TOKENS' && schema) {
+    throw new Error('La respuesta de Gemini se cortó por longitud (archivo demasiado grande). Prueba con un modelo "pro" o un archivo más pequeño.');
+  }
+  return {
+    text,
+    model: used,
+    note,
+    usage: { inputTokens: data.usageMetadata?.promptTokenCount, outputTokens: data.usageMetadata?.candidatesTokenCount },
+  };
+}
+
