@@ -11,6 +11,8 @@ import type { UserProfile } from '../supabaseClient';
 import type { CityModel } from '../lib/cityLayout';
 import { DISTRICTS } from '../lib/cityLayout';
 
+const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+
 // ---------------------------------------------------------------
 // Loading overlay
 // ---------------------------------------------------------------
@@ -115,7 +117,7 @@ export function TopBar({
       {info && onSearch && (
         <button onClick={onSearch} className="btn btn-ghost hidden w-64 justify-between text-slate-500 md:flex">
           <span className="flex items-center gap-2"><Search className="h-4 w-4" />{t.search}</span>
-          <span className="flex items-center gap-0.5"><span className="kbd">Ctrl</span><span className="kbd">K</span></span>
+          <span className="flex items-center gap-0.5"><span className="kbd">{IS_MAC ? '⌘' : 'Ctrl'}</span><span className="kbd">K</span></span>
         </button>
       )}
       {info && onReport && (
