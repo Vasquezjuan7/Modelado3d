@@ -193,3 +193,89 @@ export function Dock({
   );
 }
 
+// ---------------------------------------------------------------
+// Command palette (file search)
+// ---------------------------------------------------------------
+function fuzzyScore(q: string, s: string): number {
+  const a = q.toLowerCase();
+  const b = s.toLowerCase();
+  const idx = b.indexOf(a);
+  if (idx >= 0) return 1000 - idx - (b.length - a.length) * 0.1 + (b.lastIndexOf('/') < idx ? 200 : 0);
+  let j = 0;
+  let score = 0;
+  for (let i = 0; i < b.length && j < a.length; i++) {
+    if (b[i] === a[j]) {
+      score += 10;
+      j++;
+    }
+  }
+  return j === a.length ? score : -1;
+}
+
+export function SearchPalette({ t, city, onPick, onClose }: { t: Dict; city: CityModel; onPick: (path: string) => void; onClose: () => void }) {
+  const [q, setQ] = useState('');
+  const [sel, setSel] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+  const results = useMemo(() => {
+    if (!q.trim()) return [...city.buildings].sort((a, b) => b.lines - a.lines).slice(0, 40);
+    return city.buildings
+      .map((b) => ({ b, s: fuzzyScore(q.trim(), b.path) }))
+      .filter((x) => x.s >= 0)
+      .sort((x, y) => y.s - x.s)
+      .slice(0, 60)
+      .map((x) => x.b);
+  }, [q, city]);
+
+  useEffect(() => setSel(0), [q]);
+  useEffect(() => {
+    listRef.current?.querySelector(`[data-i="${sel}"]`)?.scrollIntoView({ block: 'nearest' });
+  }, [sel]);
+
+  return (
+    <div className="animate-fade-in absolute inset-0 z-50 flex items-start justify-center bg-slate-900/20 pt-[12vh] backdrop-blur-sm dark:bg-black/50" onMouseDown={onClose}>
+      <div className="panel animate-rise w-[620px] overflow-hidden" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-3 border-b border-slate-200 px-4 dark:border-white/[0.07]">
+          <Search className="h-4 w-4 text-slate-400" />
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t.search}
+            className="flex-1 bg-transparent py-3.5 text-[14px] text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowDown') { e.preventDefault(); setSel((s) => Math.min(results.length - 1, s + 1)); }
+              if (e.key === 'ArrowUp') { e.preventDefault(); setSel((s) => Math.max(0, s - 1)); }
+              if (e.key === 'Enter' && results[sel]) onPick(results[sel].path);
+              if (e.key === 'Escape') onClose();
+            }}
+          />
+          <span className="kbd">Esc</span>
+        </div>
+        <div ref={listRef} className="max-h-[52vh] overflow-y-auto p-1.5">
+          {results.map((b, i) => (
+            <button
+              key={b.path}
+              data-i={i}
+              onMouseEnter={() => setSel(i)}
+              onClick={() => onPick(b.path)}
+              className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left ${i === sel ? 'bg-cyan-500/10' : ''}`}
+            >
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: DISTRICTS[b.district].color }} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-medium text-slate-900 dark:text-slate-100">{b.name}</span>
+                <span className="block truncate font-mono text-[11px] text-slate-500">{b.path}</span>
+              </span>
+              <span className="shrink-0 font-mono text-[11px] text-slate-500">{b.lines.toLocaleString()} L</span>
+            </button>
+          ))}
+          {results.length === 0 && <div className="p-6 text-center text-[13px] text-slate-500">—</div>}
+        </div>
+        <div className="flex items-center gap-3 border-t border-slate-200 px-4 py-2 text-[11px] text-slate-500 dark:border-white/[0.07]">
+          <Command className="h-3 w-3" /> <span className="kbd">↑</span><span className="kbd">↓</span> <span className="kbd">Enter</span>
+          <span className="ml-auto flex items-center gap-1"><Sparkles className="h-3 w-3" />{city.buildings.length} {t.files.toLowerCase()}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
