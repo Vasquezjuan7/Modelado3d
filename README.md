@@ -8,6 +8,24 @@ Convierte cualquier repositorio en una **ciudad 3D navegable** y audítalo con I
 - **Auditoría con IA** (Google Gemini u OpenAI): hallazgos con línea exacta, diff lado a lado y archivo refactorizado (copiar, descargar o aplicar en disco en la app de escritorio).
 - **Informe de arquitectura** del repositorio generado por IA.
 
+## ⬇️ Descargar
+
+**[Descargar la última versión](https://github.com/Vasquezjuan7/Modelado3d/releases/latest)** y elige el archivo de tu sistema:
+
+| Sistema | Archivo | Cómo abrirlo |
+|---------|---------|--------------|
+| **Windows 10/11** | `CodeCity-Nexus-3D-<versión>-win-x64.zip` | Descomprime el zip (clic derecho → *Extraer todo*) y abre **`CodeCity Nexus 3D.exe`**. |
+| **macOS** (Apple Silicon: M1/M2/M3/M4) | `…-mac-arm64.dmg` | Abre el dmg y arrastra la app a *Aplicaciones*. La primera vez: clic derecho → *Abrir*. |
+| **macOS** (Intel) | `…-mac-x64.dmg` | Igual que el anterior. |
+| **Linux** (x64) | `…-linux-….AppImage` o `…-linux-….deb` | `chmod +x *.AppImage && ./*.AppImage`, o `sudo apt install ./*.deb`. |
+
+> **Windows:** la app se distribuye como `.zip` con el ejecutable original de Electron sin modificar, de modo que el
+> *Control inteligente de aplicaciones* (Smart App Control) no la bloquea. Si SmartScreen muestra
+> "Windows protegió su PC", pulsa *Más información → Ejecutar de todas formas*. No ejecutes la app desde dentro del zip:
+> descomprímelo primero.
+
+También hay una versión web: `npm run dev` (ver más abajo).
+
 La app arranca vacía: **tú eliges el repositorio** (URL de GitHub, `usuario/repo`, rama/subcarpeta con `/tree/rama/ruta`, o carpeta local en escritorio).
 
 ## Uso
@@ -23,7 +41,7 @@ npm run dist           # instaladores para el sistema actual, en release/
 
 | Sistema | Comando | Genera |
 |---------|---------|--------|
-| Windows 10/11 x64 | `npm run dist:win` | instalador NSIS `…-win-x64.exe` y versión portable `…-win-portable.exe` |
+| Windows 10/11 x64 | `npm run dist:win` | `…-win-x64.zip` (ejecutable de Electron sin modificar, compatible con Smart App Control) |
 | macOS 11+ (Intel y Apple Silicon) | `npm run dist:mac` | `…-mac-x64.dmg`, `…-mac-arm64.dmg` y `.zip` |
 | Linux x64 | `npm run dist:linux` | `.AppImage`, `.deb` (depende de `git`) y `.tar.gz` |
 
@@ -36,7 +54,7 @@ Notas por sistema:
 
 - **macOS**: la app no está firmada con un certificado de Apple. La primera vez, haz clic derecho sobre la app → *Abrir*, o ejecuta `xattr -cr "/Applications/CodeCity Nexus 3D.app"`. Para clonar repositorios hace falta git (`xcode-select --install` o `brew install git`); sin git, los repos de GitHub se cargan por la API.
 - **Linux**: `chmod +x CodeCity-Nexus-3D-*.AppImage && ./CodeCity-Nexus-3D-*.AppImage`, o `sudo apt install ./CodeCity-Nexus-3D-*.deb`.
-- **Windows**: SmartScreen o el Control inteligente de aplicaciones pueden avisar, porque el ejecutable no está firmado.
+- **Windows**: no se generan instaladores NSIS ni portables porque son ejecutables nuevos sin firma y Smart App Control los bloquea; el `.zip` conserva el `electron.exe` original, que Windows reconoce.
 
 | Modo | Cómo carga el repositorio |
 |------|---------------------------|
