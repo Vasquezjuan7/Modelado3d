@@ -33,6 +33,10 @@ const gitEnv = {
   GIT_TERMINAL_PROMPT: '0',
 };
 
+// Ubuntu 23.10+ blocks unprivileged user namespaces for AppImages, which makes Chromium's
+// sandbox abort at startup. Only the AppImage build disables it (the .deb keeps it).
+if (process.platform === 'linux' && process.env.APPIMAGE) app.commandLine.appendSwitch('no-sandbox');
+
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 
