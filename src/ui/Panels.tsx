@@ -214,3 +214,145 @@ export function Sidebar({
   );
 }
 
+// ---------------------------------------------------------------
+// Inspector (right)
+// ---------------------------------------------------------------
+export function Inspector({
+  t, lang, file, building, local, imports, importedBy, aiReady, webUrl, canOpenLocal, onAudit, onFocus, onClose, onPick, onOpenLocal,
+}: {
+  t: Dict;
+  lang: 'es' | 'en';
+  file: RepoFile;
+  building: Building;
+  local: AuditResult | null;
+  imports: string[];
+  importedBy: string[];
+  aiReady: boolean;
+  webUrl?: string;
+  canOpenLocal: boolean;
+  onAudit: () => void;
+  onFocus: () => void;
+  onClose: () => void;
+  onPick: (p: string) => void;
+  onOpenLocal: () => void;
+}) {
+  const def = DISTRICTS[building.district];
+  const [depTab, setDepTab] = useState<'out' | 'in'>('out');
+  const preview = useMemo(() => (file.content ? file.content.split(/\r?\n/).slice(0, 400) : null), [file]);
+  const issueLines = useMemo(() => new Map((local?.issues || []).map((i) => [i.line, i.severity])), [local]);
+  const deps = depTab === 'out' ? imports : importedBy;
+
+  return (
+    <aside className="panel animate-rise pointer-events-auto flex h-full w-[380px] flex-col overflow-hidden">
+      <div className="border-b border-slate-200 p-4 dark:border-white/[0.07]">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `${def.color}22`, color: def.color }}>
+            <FileCode2 className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-display text-[15px] font-semibold text-slate-900 dark:text-white" title={file.name}>{file.name}</div>
+            <div className="truncate font-mono text-[11px] text-slate-500" title={file.path}>{file.path}</div>
+          </div>
+          <button onClick={onClose} className="btn-icon btn h-8 w-8"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <span className="chip" style={{ borderColor: `${def.color}55`, background: `${def.color}14`, color: def.color }}>{def.name[lang]}</span>
+          <span className="chip border-slate-300 text-slate-600 dark:border-white/10 dark:text-slate-300">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: languageColor(file.language) }} />{file.language}
+          </span>
+          {local && (
+            <span className={`chip ${SEV_STYLE[local.severity]}`}>{local.issues.length ? `${local.issues.length} ${t.findings.toLowerCase()}` : t.clean}</span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        <div className="grid grid-cols-3 gap-2">
+          <Stat label={t.lines} value={file.lines.toLocaleString()} sub={file.linesEstimated ? t.estimated : undefined} />
+          <Stat label={t.sloc} value={file.sloc.toLocaleString()} />
+          <Stat label={t.functions} value={String(file.functions)} />
+          <Stat label={t.size} value={formatBytes(file.size)} />
+          <Stat label={t.imports} value={String(imports.length)} />
+          <Stat label={t.importedBy} value={String(importedBy.length)} />
+        </div>
+
+        <div className="grid grid-cols-[1fr_auto] gap-2">
+          <button onClick={onAudit} className="btn btn-primary py-2.5" disabled={!file.content}>
+            <Sparkles className="h-4 w-4" />{aiReady ? t.auditAI : t.auditLocal}
+          </button>
+          <button onClick={onFocus} className="btn btn-ghost" title={t.focus}><Crosshair className="h-4 w-4" /></button>
+        </div>
+        {(webUrl || canOpenLocal) && (
+          <div className="flex gap-2">
+            {webUrl && <a href={webUrl} target="_blank" rel="noreferrer" className="btn btn-ghost flex-1 text-[12px]"><ExternalLink className="h-3.5 w-3.5" />{t.openGithub}</a>}
+            {canOpenLocal && <button onClick={onOpenLocal} className="btn btn-ghost flex-1 text-[12px]"><FolderOpen className="h-3.5 w-3.5" />{lang === 'es' ? 'Abrir archivo' : 'Open file'}</button>}
+          </div>
+        )}
+
+        {local && local.issues.length > 0 && (
+          <section>
+            <div className="label-xs mb-2 flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />{t.localFindings}</div>
+            <div className="space-y-1.5">
+              {local.issues.slice(0, 6).map((i, k) => (
+                <div key={k} className="panel-inset px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`chip px-1.5 py-0 text-[9.5px] ${SEV_STYLE[i.severity]}`}>{i.severity}</span>
+                    <span className="truncate text-[12px] font-medium text-slate-800 dark:text-slate-200">{i.title}</span>
+                    <span className="ml-auto shrink-0 font-mono text-[10.5px] text-slate-500">L{i.line}</span>
+                  </div>
+                </div>
+              ))}
+              {local.issues.length > 6 && <div className="text-center text-[11px] text-slate-500">+{local.issues.length - 6}</div>}
+            </div>
+          </section>
+        )}
+
+        {(imports.length > 0 || importedBy.length > 0) && (
+          <section>
+            <div className="seg mb-2 w-full">
+              <button onClick={() => setDepTab('out')} className={`seg-item flex flex-1 items-center justify-center gap-1 ${depTab === 'out' ? 'seg-item-active' : ''}`}><ArrowUpRight className="h-3 w-3 text-cyan-500" />{t.imports} ({imports.length})</button>
+              <button onClick={() => setDepTab('in')} className={`seg-item flex flex-1 items-center justify-center gap-1 ${depTab === 'in' ? 'seg-item-active' : ''}`}><ArrowDownLeft className="h-3 w-3 text-amber-500" />{t.importedBy} ({importedBy.length})</button>
+            </div>
+            <div className="max-h-40 space-y-0.5 overflow-y-auto">
+              {deps.map((p) => (
+                <button key={p} onClick={() => onPick(p)} className="block w-full cursor-pointer truncate rounded-md px-2 py-1 text-left font-mono text-[11px] text-slate-600 hover:bg-slate-100 hover:text-cyan-600 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-cyan-300">
+                  {p}
+                </button>
+              ))}
+              {deps.length === 0 && <div className="px-2 py-1 text-[11px] text-slate-500">—</div>}
+            </div>
+          </section>
+        )}
+
+        <section>
+          <div className="label-xs mb-2">{t.preview}</div>
+          {preview ? (
+            <div className="panel-inset max-h-[340px] overflow-auto py-2">
+              <pre className="code-area">
+                {preview.map((l, i) => {
+                  const sev = issueLines.get(i + 1);
+                  return (
+                    <div key={i} className={`flex pr-3 ${sev ? (sev === 'CRITICAL' || sev === 'HIGH' ? 'bg-red-500/10' : 'bg-amber-500/10') : ''}`}>
+                      <span className="w-10 shrink-0 pr-3 text-right text-slate-400 select-none dark:text-slate-600">{i + 1}</span>
+                      <span className="whitespace-pre text-slate-700 dark:text-slate-300">{l || ' '}</span>
+                    </div>
+                  );
+                })}
+              </pre>
+            </div>
+          ) : (
+            <div className="panel-inset px-3 py-2.5 text-[11.5px] text-slate-500">{t.noContent}</div>
+          )}
+        </section>
+      </div>
+    </aside>
+  );
+}
+
+export function EmptyInspector({ t }: { t: Dict }) {
+  return (
+    <div className="panel pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 text-[12px] text-slate-500">
+      <Crosshair className="h-4 w-4 text-cyan-500" /> {t.selectHint}
+    </div>
+  );
+}
