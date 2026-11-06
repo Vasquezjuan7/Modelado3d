@@ -303,3 +303,19 @@ export async function loadRepository(
   return loadFromGitHub(parsed, { token: opts.githubToken, signal: opts.signal, onProgress: opts.onProgress });
 }
 
+export async function loadLocalFolder(onProgress: (p: LoadProgress) => void): Promise<LoadedRepo | null> {
+  if (!desktop) return null;
+  const dir = await desktop.pickFolder();
+  if (!dir) return null;
+  const name = dir.split(/[\\/]/).filter(Boolean).pop() || dir;
+  return loadFromDisk(dir, { source: 'local', slug: name, displayName: name, branch: 'local' }, onProgress);
+}
+
+export function fileWebUrl(info: RepoInfo, path: string): string | undefined {
+  if (info.source === 'github' && info.url) {
+    const base = info.url.replace(/\.git$/, '');
+    return `${base}/blob/${info.commit || info.branch}/${path}`;
+  }
+  return undefined;
+}
+
