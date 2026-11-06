@@ -4,7 +4,23 @@ const fs = require('fs');
 const os = require('os');
 const { execFile } = require('child_process');
 
-Menu.setApplicationMenu(null);
+const isMac = process.platform === 'darwin';
+
+// macOS needs an application menu: without it Cmd+C / Cmd+V / Cmd+Q stop working.
+// Windows and Linux keep the clean, menu-less window.
+if (isMac) {
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      { role: 'appMenu' },
+      { role: 'editMenu' },
+      { label: 'Ver', submenu: [{ role: 'reload' }, { role: 'togglefullscreen' }, { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }] },
+      { role: 'windowMenu' },
+    ]),
+  );
+} else {
+  Menu.setApplicationMenu(null);
+}
+
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 
