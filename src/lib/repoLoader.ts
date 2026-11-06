@@ -263,3 +263,43 @@ async function loadFromDisk(
   };
 }
 
+export async function loadRepository(
+  input: string,
+  opts: { githubToken?: string; signal?: AbortSignal; onProgress: (p: LoadProgress) => void; preferApi?: boolean },
+): Promise<LoadedRepo> {
+  const parsed = parseRepoInput(input);
+  if (!parsed) throw new Error('URL no válida. Usa por ejemplo https://github.com/owner/repo o owner/repo.');
+
+  // Desktop: prefer a real git clone (works for GitHub, GitLab, Bitbucket, self-hosted…)
+  if (isDesktop && desktop && (!opts.preferApi || parsed.kind === 'git')) {
+    try {
+      opts.onProgress({ phase: 'clone', message: `Clonando ${parsed.cloneUrl}…` });
+      const off = desktop.onProgress((m) => opts.onProgress({ phase: 'clone', message: m }));
+      let cloned: { dir: string; branch?: string; commit?: string };
+      try {
+        cloned = await desktop.cloneRepo(parsed.cloneUrl, parsed.branch);
+      } finally {
+        off();
+      }
+      const scanDir = parsed.subPath ? `${cloned.dir}/${parsed.subPath}` : cloned.dir;
+      const slug = parsed.owner ? `${parsed.owner}/${parsed.repo}` : parsed.cloneUrl.replace(/^https?:\/\//, '').replace(/\.git$/, '');
+      return await loadFromDisk(scanDir, {
+        source: parsed.kind === 'github' ? 'github' : 'git',
+        slug,
+        displayName: slug,
+        url: parsed.cloneUrl.replace(/\.git$/, ''),
+        branch: cloned.branch || parsed.branch || 'HEAD',
+        commit: cloned.commit || undefined,
+      }, opts.onProgress);
+    } catch (err) {
+      if (parsed.kind !== 'github') throw err;
+      console.warn('git clone falló, usando la API de GitHub:', err);
+    }
+  }
+
+  if (parsed.kind !== 'github') {
+    throw new Error('En la versión web solo se admiten repositorios de GitHub. Usa la app de escritorio para GitLab/Bitbucket u otros servidores Git.');
+  }
+  return loadFromGitHub(parsed, { token: opts.githubToken, signal: opts.signal, onProgress: opts.onProgress });
+}
+
