@@ -186,3 +186,61 @@ export function analyzeSource(path: string, size: number, content?: string): Rep
   };
 }
 
+// --------------------------------------------------------
+// Dependency graph (resolves relative imports to repo files)
+// --------------------------------------------------------
+const RESOLVE_SUFFIXES = ['', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.vue', '.svelte', '.py', '.css', '.scss',
+  '/index.ts', '/index.tsx', '/index.js', '/index.jsx', '/__init__.py'];
+
+function normalize(parts: string[]): string {
+  const out: string[] = [];
+  for (const p of parts) {
+    if (!p || p === '.') continue;
+    if (p === '..') out.pop();
+    else out.push(p);
+  }
+  return out.join('/');
+}
+
+export interface DependencyEdge {
+  from: string;
+  to: string;
+}
+
+export function buildDependencyGraph(files: RepoFile[]): DependencyEdge[] {
+  const byPath = new Set(files.map((f) => f.path));
+  const edges: DependencyEdge[] = [];
+  const seen = new Set<string>();
+
+  for (const f of files) {
+    const dir = f.path.split('/').slice(0, -1);
+    for (const spec of f.imports) {
+      let candidates: string[] = [];
+      if (spec.startsWith('.') && f.ext === 'py') {
+        // python relative: from .module import x / from ..pkg import y
+        const dots = spec.match(/^\.+/)![0].length;
+        const rest = spec.slice(dots).replace(/\./g, '/');
+        const base = normalize([...dir.slice(0, dir.length - (dots - 1)), rest]);
+        candidates = [base + '.py', base + '/__init__.py'];
+      } else if (spec.startsWith('.') || spec.startsWith('/')) {
+        const base = spec.startsWith('/') ? normalize(spec.split('/')) : normalize([...dir, ...spec.split('/')]);
+        candidates = RESOLVE_SUFFIXES.map((s) => base + s);
+      } else if (spec.startsWith('@/') || spec.startsWith('~/')) {
+        const base = normalize(['src', ...spec.slice(2).split('/')]);
+        candidates = RESOLVE_SUFFIXES.map((s) => base + s);
+      } else if (f.ext === 'py' && /^[\w.]+$/.test(spec)) {
+        const base = spec.replace(/\./g, '/');
+        candidates = [base + '.py', base + '/__init__.py', 'src/' + base + '.py'];
+      }
+      const target = candidates.find((c) => byPath.has(c));
+      if (target && target !== f.path) {
+        const key = f.path + '>' + target;
+        if (!seen.has(key)) {
+          seen.add(key);
+          edges.push({ from: f.path, to: target });
+        }
+      }
+    }
+  }
+  return edges;
+}
