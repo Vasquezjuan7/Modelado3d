@@ -33,3 +33,39 @@ function isInsideAllowed(target) {
   return false;
 }
 
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1480,
+    height: 920,
+    minWidth: 1100,
+    minHeight: 700,
+    title: 'CodeCity Nexus 3D',
+    backgroundColor: '#05070d',
+    autoHideMenuBar: true,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
+  const devUrl = process.env.VITE_DEV_SERVER_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : null);
+  if (!app.isPackaged && devUrl) {
+    mainWindow.loadURL(devUrl).catch(() => mainWindow.loadFile(path.join(__dirname, '../dist/index.html')));
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+  }
+
+  mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
