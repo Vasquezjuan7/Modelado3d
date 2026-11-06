@@ -437,3 +437,49 @@ function normalizeResult(parsed: any, original: string, provider: 'gemini' | 'op
   };
 }
 
+// --------------------------------------------------------
+// 3. Google Gemini
+// --------------------------------------------------------
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+
+export interface GeminiModelInfo {
+  id: string;
+  displayName: string;
+  inputTokenLimit?: number;
+  outputTokenLimit?: number;
+}
+
+class GeminiError extends Error {
+  suggestedModel?: string;
+  status?: number;
+}
+
+const sleep = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    const id = setTimeout(resolve, ms);
+    signal?.addEventListener('abort', () => {
+      clearTimeout(id);
+      reject(new DOMException('Cancelado', 'AbortError'));
+    });
+  });
+
+async function geminiError(res: Response): Promise<GeminiError> {
+  let msg = `HTTP ${res.status}`;
+  try {
+    const body = await res.json();
+    if (body?.error?.message) msg = body.error.message;
+  } catch {
+    /* ignore */
+  }
+  const suggested = msg.match(/use\s+models\/([\w.-]+)/i)?.[1];
+  if (res.status === 400 && /API key not valid|API_KEY_INVALID/i.test(msg)) msg = 'La API key de Gemini no es válida.';
+  else if (res.status === 403) msg = `Acceso denegado por Google: ${msg}`;
+  else if (res.status === 429) msg = `Cuota de Gemini agotada o demasiadas peticiones: ${msg}`;
+  else if (res.status === 404) msg = `Modelo no disponible para esta clave: ${msg}`;
+  else if (res.status === 503 || res.status === 500) msg = `Gemini está saturado temporalmente (HTTP ${res.status}). Reintenta en unos segundos o elige otro modelo en Ajustes. Detalle: ${msg}`;
+  const err = new GeminiError(msg);
+  err.status = res.status;
+  if (res.status === 404 && suggested) err.suggestedModel = suggested;
+  return err;
+}
+
