@@ -154,3 +154,70 @@ function SelectionBeam({ city, path }: { city: CityModel; path: string | null })
   );
 }
 
+export default function CityScene(props: CitySceneProps) {
+  const { city, dark, quality } = props;
+  const size = Math.max(city.bounds.maxX - city.bounds.minX, city.bounds.maxZ - city.bounds.minZ, 80);
+  const bg = dark ? '#05070d' : '#e9eef5';
+  const fog = useMemo(() => new THREE.Fog(bg, size * 1.4, size * 4.5), [bg, size]);
+
+  return (
+    <Canvas
+      dpr={quality === 'high' ? [1, 1.75] : [0.75, 1]}
+      camera={{ fov: 42, near: 0.5, far: 5000, position: [200, 180, 220] }}
+      gl={{ antialias: quality === 'high', powerPreference: 'high-performance' }}
+      onPointerMissed={(e) => {
+        if (e.type === 'click') props.onSelect(null);
+      }}
+      onCreated={({ gl }) => {
+        gl.toneMapping = THREE.ACESFilmicToneMapping;
+      }}
+    >
+      <color attach="background" args={[bg]} />
+      <primitive attach="fog" object={fog} />
+      <hemisphereLight args={[dark ? '#5b6b9a' : '#ffffff', dark ? '#05070d' : '#94a3b8', dark ? 0.55 : 1.0]} />
+      <directionalLight position={[size * 0.6, size * 1.2, size * 0.4]} intensity={dark ? 0.7 : 2.1} color={dark ? '#a5b4fc' : '#fff7ed'} />
+      <directionalLight position={[-size * 0.5, size * 0.4, -size * 0.6]} intensity={dark ? 0.25 : 0.6} color={dark ? '#22d3ee' : '#e0f2fe'} />
+
+      <Roads city={city} dark={dark} />
+      <Blocks city={city} dark={dark} activeDistrict={props.activeDistrict} />
+      <Buildings
+        city={city}
+        dark={dark}
+        colorMode={props.colorMode}
+        riskByPath={props.riskByPath}
+        languageByPath={props.languageByPath}
+        selectedPath={props.selectedPath}
+        hoveredPath={props.hoveredPath}
+        highlight={props.highlight}
+        onSelect={props.onSelect}
+        onHover={props.onHover}
+      />
+      <Landmarks city={city} dark={dark} />
+      <SelectionBeam city={city} path={props.selectedPath} />
+      <AmbientCars city={city} dark={dark} />
+      <DataPackets city={city} edges={props.edges} mode={props.traffic} hotPaths={props.hotPaths} onStats={props.onTrafficStats} />
+      {props.showArcs && <DependencyArcs city={city} edges={props.edges} selected={props.selectedPath} dark={dark} />}
+      {props.showLabels && <DistrictLabels city={city} dark={dark} lang={props.lang} activeDistrict={props.activeDistrict} />}
+      {props.hoveredPath && props.hoveredPath !== props.selectedPath && <HoverTag city={city} path={props.hoveredPath} dark={dark} lang={props.lang} />}
+
+      <OrbitControls
+        makeDefault
+        enableDamping
+        dampingFactor={0.08}
+        maxPolarAngle={Math.PI / 2.08}
+        minDistance={12}
+        maxDistance={size * 4}
+        autoRotate={props.autoRotate}
+        autoRotateSpeed={0.35}
+      />
+      <CameraRig city={city} command={props.cameraCommand} />
+
+      {quality === 'high' && (
+        <EffectComposer multisampling={0}>
+          <Bloom mipmapBlur intensity={dark ? 0.85 : 0.25} luminanceThreshold={dark ? 0.55 : 0.9} luminanceSmoothing={0.2} />
+          <Vignette eskil={false} offset={0.25} darkness={dark ? 0.6 : 0.25} />
+        </EffectComposer>
+      )}
+    </Canvas>
+  );
+}
