@@ -117,3 +117,61 @@ ipcMain.handle('nexus:pickFolder', async () => {
   return res.filePaths[0];
 });
 
+ipcMain.handle('nexus:scan', async (_e, dir) => {
+  const root = path.resolve(String(dir));
+  const allowed = [...allowedRoots].some((r) => root === r || isInsideAllowed(root));
+  if (!allowed) throw new Error('Carpeta no autorizada.');
+
+  const entries = [];
+  let truncated = false;
+  let totalRead = 0;
+
+  const walk = (current) => {
+    if (entries.length >= MAX_ENTRIES) {
+      truncated = true;
+      return;
+    }
+    let items;
+    try {
+      items = fs.readdirSync(current, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const item of items) {
+      const abs = path.join(current, item.name);
+      if (item.isSymbolicLink()) continue;
+      if (item.isDirectory()) {
+        if (!IGNORED_DIRS.has(item.name)) walk(abs);
+        continue;
+      }
+      if (!item.isFile()) continue;
+      let size = 0;
+      try {
+        size = fs.statSync(abs).size;
+      } catch {
+        continue;
+      }
+      const rel = path.relative(root, abs).split(path.sep).join('/');
+      const entry = { path: rel, absPath: abs, size };
+      if (!BINARY_EXT.test(item.name) && size <= MAX_READ_SIZE && totalRead + size <= MAX_TOTAL_READ) {
+        try {
+          const text = fs.readFileSync(abs, 'utf-8');
+          if (!text.includes('\u0000')) {
+            entry.content = text;
+            totalRead += size;
+          }
+        } catch {
+          /* unreadable */
+        }
+      }
+      entries.push(entry);
+      if (entries.length >= MAX_ENTRIES) {
+        truncated = true;
+        return;
+      }
+    }
+  };
+  walk(root);
+  return { entries, truncated };
+});
+
