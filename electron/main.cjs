@@ -107,3 +107,13 @@ ipcMain.handle('nexus:clone', async (event, url, branch) => {
   return { dir: dest, branch: realBranch || branch || 'HEAD', commit };
 });
 
+ipcMain.handle('nexus:pickFolder', async () => {
+  const res = await dialog.showOpenDialog(mainWindow, {
+    title: 'Selecciona la carpeta del proyecto',
+    properties: ['openDirectory'],
+  });
+  if (res.canceled || !res.filePaths[0]) return null;
+  allowedRoots.add(path.resolve(res.filePaths[0]));
+  return res.filePaths[0];
+});
+
