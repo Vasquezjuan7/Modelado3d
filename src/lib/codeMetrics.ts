@@ -75,3 +75,32 @@ export function isRelevantFile(path: string, size: number): boolean {
   return true;
 }
 
+const C_LIKE = new Set(['ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'vue', 'svelte', 'astro', 'java', 'kt', 'kts', 'scala', 'go', 'rs', 'c', 'h', 'cc', 'cpp', 'hpp', 'cs', 'swift', 'm', 'dart', 'php', 'css', 'scss', 'less', 'sol', 'zig', 'proto', 'graphql', 'gql', 'prisma']);
+const HASH_COMMENT = new Set(['py', 'rb', 'sh', 'bash', 'zsh', 'ps1', 'yaml', 'yml', 'toml', 'r', 'jl', 'ex', 'exs', 'nim', 'tf', 'dockerfile', 'mk', 'env', 'ini']);
+
+function countSloc(lines: string[], ext: string): number {
+  let sloc = 0;
+  let inBlock = false;
+  for (const raw of lines) {
+    const l = raw.trim();
+    if (!l) continue;
+    if (C_LIKE.has(ext)) {
+      if (inBlock) {
+        if (l.includes('*/')) inBlock = false;
+        continue;
+      }
+      if (l.startsWith('//')) continue;
+      if (l.startsWith('/*')) {
+        if (!l.includes('*/')) inBlock = true;
+        continue;
+      }
+    } else if (HASH_COMMENT.has(ext)) {
+      if (l.startsWith('#')) continue;
+    } else if (ext === 'sql' || ext === 'lua' || ext === 'hs') {
+      if (l.startsWith('--')) continue;
+    }
+    sloc++;
+  }
+  return sloc;
+}
+
