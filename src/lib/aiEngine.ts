@@ -331,3 +331,61 @@ function collapseRepeats(issues: DetectedIssue[]): DetectedIssue[] {
   return out;
 }
 
+// --------------------------------------------------------
+// 2. Prompting
+// --------------------------------------------------------
+const MAX_CODE_CHARS = 60_000;
+
+function numbered(code: string): string {
+  const src = code.length > MAX_CODE_CHARS ? code.slice(0, MAX_CODE_CHARS) : code;
+  return src.split(/\r?\n/).map((l, i) => `${String(i + 1).padStart(4, ' ')}| ${l}`).join('\n') +
+    (code.length > MAX_CODE_CHARS ? '\n…[archivo truncado para el análisis]' : '');
+}
+
+function buildPrompt(code: string, fileName: string, filePath: string, lang: 'es' | 'en', context?: string): string {
+  const language = lang === 'es' ? 'español' : 'English';
+  return `Eres un auditor senior de seguridad, rendimiento y arquitectura de software.
+Audita el archivo "${fileName}" (ruta: ${filePath}).${context ? `\nContexto del repositorio: ${context}` : ''}
+
+Instrucciones:
+- Reporta solo problemas REALES y verificables en el código mostrado (seguridad, rendimiento, bugs, arquitectura, mantenibilidad, tipado). No inventes problemas.
+- "line" debe ser el número exacto de la línea (los números aparecen a la izquierda de "|").
+- "snippet" es el fragmento literal de esa línea (sin el número).
+- "score" es la calidad global del archivo de 0 (pésimo) a 100 (excelente).
+- "refactoredCode" es el archivo COMPLETO corregido, listo para reemplazar el original, sin números de línea ni bloques markdown. Mantén el comportamiento y el estilo existentes; si el archivo ya está bien, devuélvelo sin cambios.
+- Si no hay problemas, devuelve "issues": [] y "severity": "CLEAN".
+- Escribe todos los textos en ${language}.
+
+CÓDIGO:
+${numbered(code)}`;
+}
+
+const GEMINI_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    title: { type: 'STRING' },
+    severity: { type: 'STRING', enum: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'CLEAN'] },
+    summary: { type: 'STRING' },
+    score: { type: 'INTEGER' },
+    issues: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          line: { type: 'INTEGER' },
+          type: { type: 'STRING', enum: ['security', 'performance', 'bug', 'architecture', 'maintainability', 'type-safety'] },
+          severity: { type: 'STRING', enum: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] },
+          title: { type: 'STRING' },
+          message: { type: 'STRING' },
+          snippet: { type: 'STRING' },
+          fix: { type: 'STRING' },
+        },
+        required: ['line', 'type', 'severity', 'title', 'message'],
+      },
+    },
+    explanation: { type: 'STRING' },
+    refactoredCode: { type: 'STRING' },
+  },
+  required: ['title', 'severity', 'summary', 'score', 'issues', 'explanation', 'refactoredCode'],
+};
+
