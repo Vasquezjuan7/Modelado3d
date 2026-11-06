@@ -319,3 +319,31 @@ export function fileWebUrl(info: RepoInfo, path: string): string | undefined {
   return undefined;
 }
 
+// --------------------------------------------------------
+// Recent repositories (localStorage)
+// --------------------------------------------------------
+const RECENTS_KEY = 'codecity_recent_repos';
+export interface RecentRepo {
+  input: string;
+  name: string;
+  files: number;
+  at: number;
+}
+
+export function getRecentRepos(): RecentRepo[] {
+  try {
+    return JSON.parse(localStorage.getItem(RECENTS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+export function pushRecentRepo(r: RecentRepo) {
+  const list = getRecentRepos().filter((x) => x.name !== r.name);
+  list.unshift(r);
+  localStorage.setItem(RECENTS_KEY, JSON.stringify(list.slice(0, 6)));
+}
+
+export function removeRecentRepo(name: string) {
+  localStorage.setItem(RECENTS_KEY, JSON.stringify(getRecentRepos().filter((x) => x.name !== name)));
+}
