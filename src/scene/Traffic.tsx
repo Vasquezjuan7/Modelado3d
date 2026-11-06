@@ -76,3 +76,189 @@ export function AmbientCars({ city, dark }: { city: CityModel; dark: boolean }) 
   );
 }
 
+// ---------------------------------------------------------------
+// Data packets travelling along real import dependencies
+// ---------------------------------------------------------------
+interface Packet {
+  pts: THREE.Vector3[];
+  segLen: number[];
+  total: number;
+  d: number;
+  speed: number;
+  bottleneck: boolean;
+  color: THREE.Color;
+  bornAt: number;
+}
+
+const MAX_PACKETS = 420;
+
+function nearest(list: number[], v: number) {
+  let best = list[0];
+  for (const x of list) if (Math.abs(x - v) < Math.abs(best - v)) best = x;
+  return best;
+}
+
+export function DataPackets({
+  city,
+  edges,
+  mode,
+  hotPaths,
+  onStats,
+}: {
+  city: CityModel;
+  edges: DependencyEdge[];
+  mode: TrafficMode;
+  hotPaths: Set<string>; // files with N+1 / perf findings
+  onStats: (s: TrafficStats) => void;
+}) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const packets = useRef<Packet[]>([]);
+  const spawnAcc = useRef(0);
+  const statAcc = useRef({ t: 0, delivered: 0, latencies: [] as number[] });
+
+  const routes = useMemo(() => {
+    let list = edges.filter((e) => city.byPath.has(e.from) && city.byPath.has(e.to));
+    if (list.length < 10) {
+      // No resolvable imports (e.g. non-JS repos): synthesize traffic between districts
+      const b = city.buildings;
+      const synth: DependencyEdge[] = [];
+      for (let i = 0; i < Math.min(200, b.length * 2); i++) {
+        const a = b[(i * 7919) % b.length];
+        const c = b[(i * 104729 + 13) % b.length];
+        if (a !== c) synth.push({ from: a.path, to: c.path });
+      }
+      list = list.concat(synth);
+    }
+    return list;
+  }, [edges, city]);
+
+  const hotRoutes = useMemo(() => {
+    const dataPaths = new Set(city.buildings.filter((b) => b.district === 'data').map((b) => b.path));
+    const r = routes.filter((e) => hotPaths.has(e.from) || dataPaths.has(e.to));
+    return r.length ? r : routes.slice(0, 20);
+  }, [routes, hotPaths, city]);
+
+  useEffect(() => {
+    packets.current = [];
+  }, [city, mode]);
+
+  useLayoutEffect(() => {
+    const c = new THREE.Color('#ffffff');
+    for (let i = 0; i < MAX_PACKETS; i++) ref.current?.setColorAt(i, c);
+  }, []);
+
+  const makePacket = (e: DependencyEdge, bottleneck: boolean, now: number): Packet | null => {
+    const a = city.byPath.get(e.from);
+    const b = city.byPath.get(e.to);
+    if (!a || !b) return null;
+    const rz = nearest(city.roadsZ, a.z);
+    const rx = nearest(city.roadsX, b.x);
+    const y = 0.9;
+    const pts = [
+      new THREE.Vector3(a.x, y, a.z),
+      new THREE.Vector3(a.x, y, rz),
+      new THREE.Vector3(rx, y, rz),
+      new THREE.Vector3(rx, y, b.z),
+      new THREE.Vector3(b.x, y, b.z),
+    ];
+    const segLen = pts.slice(1).map((p, i) => p.distanceTo(pts[i]));
+    const total = segLen.reduce((s, v) => s + v, 0);
+    if (total < 1) return null;
+    return {
+      pts, segLen, total, d: 0,
+      speed: bottleneck ? 9 + Math.random() * 4 : 34 + Math.random() * 18,
+      bottleneck,
+      color: new THREE.Color(bottleneck ? '#ff2d55' : a.color),
+      bornAt: now,
+    };
+  };
+
+  const m = useMemo(() => new THREE.Matrix4(), []);
+  const pos = useMemo(() => new THREE.Vector3(), []);
+  const scl = useMemo(() => new THREE.Vector3(), []);
+  const quat = useMemo(() => new THREE.Quaternion(), []);
+  const hidden = useMemo(() => new THREE.Matrix4().makeScale(0, 0, 0), []);
+
+  useFrame(({ clock }, dt) => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const step = Math.min(dt, 0.05);
+    const now = clock.elapsedTime;
+
+    if (mode !== 'off' && routes.length) {
+      const rate = mode === 'stress' ? 70 : 22; // packets per second
+      spawnAcc.current += rate * step;
+      while (spawnAcc.current >= 1 && packets.current.length < MAX_PACKETS) {
+        spawnAcc.current -= 1;
+        const stress = mode === 'stress' && Math.random() < 0.65;
+        const e = stress ? hotRoutes[Math.floor(Math.random() * hotRoutes.length)] : routes[Math.floor(Math.random() * routes.length)];
+        const p = makePacket(e, stress, now);
+        if (p) packets.current.push(p);
+      }
+    }
+
+    // congestion slows bottleneck packets further when many share the road
+    const bottlenecks = packets.current.filter((p) => p.bottleneck).length;
+    const congestion = 1 / (1 + bottlenecks / 60);
+
+    const alive: Packet[] = [];
+    for (const p of packets.current) {
+      p.d += p.speed * step * (p.bottleneck ? congestion : 1);
+      if (p.d >= p.total) {
+        statAcc.current.delivered++;
+        statAcc.current.latencies.push((now - p.bornAt) * (p.bottleneck ? 120 : 9));
+        continue;
+      }
+      alive.push(p);
+    }
+    packets.current = alive;
+
+    const c = new THREE.Color();
+    for (let i = 0; i < MAX_PACKETS; i++) {
+      const p = alive[i];
+      if (!p) {
+        mesh.setMatrixAt(i, hidden);
+        continue;
+      }
+      let d = p.d;
+      let seg = 0;
+      while (seg < p.segLen.length - 1 && d > p.segLen[seg]) {
+        d -= p.segLen[seg];
+        seg++;
+      }
+      const a = p.pts[seg];
+      const b = p.pts[seg + 1];
+      const t = p.segLen[seg] > 0 ? Math.min(1, d / p.segLen[seg]) : 1;
+      pos.lerpVectors(a, b, t);
+      const alongX = Math.abs(b.x - a.x) > Math.abs(b.z - a.z);
+      const size = p.bottleneck ? 1.1 : 0.75;
+      scl.set(alongX ? 2.4 : size, size, alongX ? size : 2.4);
+      m.compose(pos, quat, scl);
+      mesh.setMatrixAt(i, m);
+      mesh.setColorAt(i, c.copy(p.color).multiplyScalar(2.2));
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+
+    statAcc.current.t += step;
+    if (statAcc.current.t >= 0.6) {
+      const lat = statAcc.current.latencies.sort((x, y) => x - y);
+      const p99 = lat.length ? lat[Math.min(lat.length - 1, Math.floor(lat.length * 0.99))] : 0;
+      onStats({
+        packetsPerSec: Math.round(statAcc.current.delivered / statAcc.current.t),
+        p99: Math.round(p99),
+        congested: bottlenecks,
+        inFlight: alive.length,
+      });
+      statAcc.current = { t: 0, delivered: 0, latencies: [] };
+    }
+  });
+
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, MAX_PACKETS]} frustumCulled={false} raycast={() => null}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshBasicMaterial toneMapped={false} />
+    </instancedMesh>
+  );
+}
+
