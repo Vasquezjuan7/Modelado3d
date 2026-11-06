@@ -36,31 +36,15 @@
     ],
     "win": {
       "icon": "build/icon.png",
+      "signAndEditExecutable": false,
       "target": [
         {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
+          "target": "zip",
           "arch": [
             "x64"
           ]
         }
       ]
-    },
-    "portable": {
-      "artifactName": "CodeCity-Nexus-3D-${version}-win-portable.${ext}"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "CodeCity Nexus 3D"
     },
     "mac": {
       "icon": "build/icon.png",
