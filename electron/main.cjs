@@ -1,78 +1,35 @@
-const { app, BrowserWindow, shell, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, shell, Menu, ipcMain, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const { execFile } = require('child_process');
 
-// Disable standard legacy application menu for a sleek native desktop look
 Menu.setApplicationMenu(null);
-
-// Hardware acceleration & performance switches for 3D WebGL / Vulkan
 app.commandLine.appendSwitch('enable-gpu-rasterization');
-app.commandLine.appendSwitch('enable-zero-copy');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 
 let mainWindow;
 
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1440,
-    height: 900,
-    minWidth: 1024,
-    minHeight: 700,
-    title: 'CodeCity Nexus 3D - Spatial Architecture Engine',
-    backgroundColor: '#060811',
-    autoHideMenuBar: true,
-    show: false,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      webSecurity: false,
-    },
-  });
+const IGNORED_DIRS = new Set([
+  '.git', 'node_modules', 'dist', 'build', 'out', '.next', '.nuxt', '.svelte-kit', 'coverage', '__pycache__',
+  '.venv', 'venv', 'target', 'vendor', '.idea', '.vscode', '.gradle', 'bin', 'obj', '.turbo', '.cache', 'release',
+  'Pods', '.dart_tool', '.expo',
+]);
+const MAX_ENTRIES = 6000;
+const MAX_READ_SIZE = 600 * 1024;
+const MAX_TOTAL_READ = 80 * 1024 * 1024;
+const BINARY_EXT = /\.(png|jpe?g|gif|webp|ico|bmp|svgz|pdf|zip|gz|tar|7z|rar|exe|dll|so|dylib|bin|jar|class|woff2?|ttf|otf|eot|mp3|mp4|mov|avi|wav|ogg|psd|ai|sqlite|db|pyc|lockb)$/i;
 
-  // Handle external links in native default browser
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: 'deny' };
-  });
+/** Directories the renderer is allowed to write into (clones + folders picked by the user) */
+const allowedRoots = new Set();
+const cloneRoot = path.join(os.tmpdir(), 'codecity-nexus-clones');
 
-  const isDev = !app.isPackaged && process.env.NODE_ENV === 'development';
-
-  if (isDev) {
-    mainWindow.loadURL('http://localhost:5173').catch(() => {
-      // Fallback to local files if dev server is not active
-      mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
-    });
-  } else {
-    // In standalone desktop mode: load local bundled files
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+function isInsideAllowed(target) {
+  const resolved = path.resolve(target);
+  for (const root of allowedRoots) {
+    const rel = path.relative(root, resolved);
+    if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) return true;
   }
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-  });
-
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+  return false;
 }
 
-// IPC handlers for desktop operations
-ipcMain.handle('open-release-folder', () => {
-  const releasePath = path.join(__dirname, '../release');
-  shell.openPath(releasePath);
-});
-
-app.whenReady().then(() => {
-  createWindow();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
