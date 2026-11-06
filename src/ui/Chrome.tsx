@@ -279,3 +279,31 @@ export function SearchPalette({ t, city, onPick, onClose }: { t: Dict; city: Cit
   );
 }
 
+export function Modal({ children, onClose, width = 'w-[560px]' }: { children: React.ReactNode; onClose: () => void; width?: string }) {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onClose]);
+  return (
+    <div className="animate-fade-in absolute inset-0 z-50 flex items-center justify-center bg-slate-900/25 p-6 backdrop-blur-sm dark:bg-black/55" onMouseDown={onClose}>
+      <div className={`panel animate-rise flex max-h-full flex-col overflow-hidden ${width}`} onMouseDown={(e) => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function ModalHeader({ icon, title, subtitle, onClose, right }: { icon: React.ReactNode; title: React.ReactNode; subtitle?: React.ReactNode; onClose: () => void; right?: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-4 dark:border-white/[0.07]">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400/15 to-indigo-500/20 text-cyan-500">{icon}</div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-display text-[15px] font-semibold text-slate-900 dark:text-white">{title}</div>
+        {subtitle && <div className="truncate text-[12px] text-slate-500">{subtitle}</div>}
+      </div>
+      {right}
+      <button onClick={onClose} className="btn-icon btn"><X className="h-4 w-4" /></button>
+    </div>
+  );
+}
