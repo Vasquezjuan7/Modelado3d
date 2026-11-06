@@ -635,3 +635,40 @@ async function geminiGenerate(apiKey: string, model: string, prompt: string, sch
   };
 }
 
+// --------------------------------------------------------
+// 4. OpenAI
+// --------------------------------------------------------
+async function openaiGenerate(apiKey: string, model: string, system: string, user: string, json: boolean, signal?: AbortSignal) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    signal,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey.trim()}` },
+    body: JSON.stringify({
+      model,
+      ...(json ? { response_format: { type: 'json_object' } } : {}),
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+    }),
+  });
+  if (!res.ok) {
+    let msg = `OpenAI HTTP ${res.status}`;
+    try {
+      const b = await res.json();
+      if (b?.error?.message) msg = b.error.message;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  return {
+    text: data.choices?.[0]?.message?.content || '',
+    usage: { inputTokens: data.usage?.prompt_tokens, outputTokens: data.usage?.completion_tokens },
+  };
+}
+
+export async function testOpenAIKey(apiKey: string, model: string): Promise<{ ok: true; ms: number; reply: string }> {
+  const t0 = performance.now();
+  const r = await openaiGenerate(apiKey, model, 'Responde solo OK.', 'ping', false);
+  return { ok: true, ms: Math.round(performance.now() - t0), reply: r.text.trim() };
+}
+
