@@ -389,3 +389,51 @@ const GEMINI_SCHEMA = {
   required: ['title', 'severity', 'summary', 'score', 'issues', 'explanation', 'refactoredCode'],
 };
 
+function stripFences(text: string): string {
+  return text.trim().replace(/^```(?:json|[a-z]+)?\s*/i, '').replace(/```\s*$/, '').trim();
+}
+
+function parseJsonLoose(text: string): any {
+  const clean = stripFences(text);
+  try {
+    return JSON.parse(clean);
+  } catch {
+    const start = clean.indexOf('{');
+    const end = clean.lastIndexOf('}');
+    if (start >= 0 && end > start) return JSON.parse(clean.slice(start, end + 1));
+    throw new Error('La IA devolvió una respuesta que no es JSON válido.');
+  }
+}
+
+function normalizeResult(parsed: any, original: string, provider: 'gemini' | 'openai', model: string, durationMs: number, usage?: AuditResult['usage']): AuditResult {
+  const validSev = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+  const issues: DetectedIssue[] = (Array.isArray(parsed.issues) ? parsed.issues : []).map((i: any) => ({
+    line: Number.isFinite(+i.line) ? Math.max(1, Math.round(+i.line)) : 1,
+    type: i.type || 'bug',
+    severity: validSev.includes(i.severity) ? i.severity : 'MEDIUM',
+    title: String(i.title || 'Hallazgo'),
+    message: String(i.message || ''),
+    snippet: String(i.snippet || '').trim(),
+    fix: i.fix ? String(i.fix) : undefined,
+  }));
+  issues.sort((a, b) => sevRank(b.severity) - sevRank(a.severity) || a.line - b.line);
+  let refactored: string | null = typeof parsed.refactoredCode === 'string' ? stripFences(parsed.refactoredCode) : null;
+  if (refactored !== null && !refactored.trim()) refactored = null;
+  // Keep original trailing newline convention
+  if (refactored && original.endsWith('\n') && !refactored.endsWith('\n')) refactored += '\n';
+  const sev = parsed.severity === 'CLEAN' || validSev.includes(parsed.severity) ? parsed.severity : issues[0]?.severity || 'CLEAN';
+  return {
+    title: String(parsed.title || (issues[0]?.title ?? 'Auditoría completada')),
+    severity: issues.length === 0 ? 'CLEAN' : sev,
+    summary: String(parsed.summary || ''),
+    score: Number.isFinite(+parsed.score) ? Math.max(0, Math.min(100, Math.round(+parsed.score))) : computeScore(issues),
+    issues,
+    refactoredCode: refactored,
+    explanation: String(parsed.explanation || ''),
+    provider,
+    modelName: model,
+    durationMs,
+    usage,
+  };
+}
+
