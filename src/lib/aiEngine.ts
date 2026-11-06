@@ -559,3 +559,51 @@ async function geminiCall(apiKey: string, model: string, body: object, signal?: 
   throw lastErr ?? new Error('Gemini no está disponible.');
 }
 
+const UNSUITABLE_MODEL = /(embedding|image|tts|audio|live|vision|aqa|robotics|computer-use|banana|transcribe|customtools)/i;
+
+function modelVersion(id: string): number {
+  const m = id.match(/gemini-(\d+(?:\.\d+)?)/);
+  return m ? parseFloat(m[1]) : 0;
+}
+
+function modelRank(id: string): number {
+  if (/^gemini-flash-latest$/.test(id)) return 0;
+  const preview = /(preview|exp)/.test(id);
+  if (id.endsWith('-flash') && !id.includes('omni')) return preview ? 4 : 1;
+  if (/-pro(-latest)?$/.test(id)) return 2;
+  if (id.includes('lite')) return 3;
+  return 5;
+}
+
+export async function listGeminiModels(apiKey: string): Promise<GeminiModelInfo[]> {
+  const res = await fetch(`${GEMINI_BASE}/models?pageSize=200`, { headers: { 'x-goog-api-key': apiKey.trim() } });
+  if (!res.ok) throw await geminiError(res);
+  const data = await res.json();
+  const models: GeminiModelInfo[] = (data.models || [])
+    .filter((m: any) => (m.supportedGenerationMethods || []).includes('generateContent'))
+    .filter((m: any) => /gemini/i.test(m.name) && !UNSUITABLE_MODEL.test(m.name))
+    .map((m: any) => ({
+      id: String(m.name).replace(/^models\//, ''),
+      displayName: m.displayName || m.name,
+      inputTokenLimit: m.inputTokenLimit,
+      outputTokenLimit: m.outputTokenLimit,
+    }));
+  models.sort((a, b) => modelRank(a.id) - modelRank(b.id) || modelVersion(b.id) - modelVersion(a.id) || a.id.localeCompare(b.id));
+  try {
+    localStorage.setItem(MODELS_CACHE_KEY, JSON.stringify(models.map((m) => m.id)));
+  } catch {
+    /* not in a browser */
+  }
+  return models;
+}
+
+export async function testGeminiKey(apiKey: string, model: string): Promise<{ ok: true; ms: number; reply: string; model: string; note?: string }> {
+  const t0 = performance.now();
+  const { data, model: used, note } = await geminiCall(apiKey, model, {
+    contents: [{ role: 'user', parts: [{ text: 'Responde únicamente con la palabra: OK' }] }],
+    generationConfig: { temperature: 0, maxOutputTokens: 512 },
+  }, undefined, 25_000);
+  const reply = (data.candidates?.[0]?.content?.parts || []).filter((p: any) => !p.thought).map((p: any) => p.text || '').join('').trim();
+  return { ok: true, ms: Math.round(performance.now() - t0), reply: reply || '(respuesta vacía)', model: used, note };
+}
+
