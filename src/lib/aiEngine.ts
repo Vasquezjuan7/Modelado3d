@@ -483,3 +483,79 @@ async function geminiError(res: Response): Promise<GeminiError> {
   return err;
 }
 
+const MODELS_CACHE_KEY = 'codecity_gemini_models';
+
+function cachedModelIds(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(MODELS_CACHE_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+/** Stable, versioned Flash models from the key's own model list, newest first */
+function fallbackModels(current: string): string[] {
+  return cachedModelIds()
+    .filter((id) => id !== current && (modelRank(id) === 1 || modelRank(id) === 3))
+    .slice(0, 6);
+}
+
+/**
+ * POST generateContent with resilience:
+ *  - follows Google's "model retired, use models/X" hint
+ *  - retries transient overloads (500/503) and timeouts
+ *  - falls back to other stable Flash models available to the key
+ */
+async function geminiCall(apiKey: string, model: string, body: object, signal?: AbortSignal, timeoutMs = 90_000): Promise<{ data: any; model: string; note?: string }> {
+  const call = async (m: string) => {
+    const ctrl = new AbortController();
+    const onAbort = () => ctrl.abort();
+    signal?.addEventListener('abort', onAbort);
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      return await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(m)}:generateContent`, {
+        method: 'POST',
+        signal: ctrl.signal,
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey.trim() },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      if (signal?.aborted) throw e;
+      const err = new GeminiError(`Gemini no respondió a tiempo con ${m} (${Math.round(timeoutMs / 1000)} s) o se cortó la conexión.`);
+      err.status = 504;
+      return err;
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+    }
+  };
+
+  const queue = [model, ...fallbackModels(model)];
+  const tried: string[] = [];
+  let lastErr: GeminiError | null = null;
+  while (queue.length) {
+    const m = queue.shift()!;
+    if (tried.includes(m)) continue;
+    tried.push(m);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const res = await call(m);
+      if (!(res instanceof GeminiError) && res.ok) {
+        const note = m !== model ? `${model} no estaba disponible; respondió ${m}.` : undefined;
+        return { data: await res.json(), model: m, note };
+      }
+      const err = res instanceof GeminiError ? res : await geminiError(res);
+      lastErr = err;
+      if (err.suggestedModel && !tried.includes(err.suggestedModel)) {
+        queue.unshift(err.suggestedModel);
+        break;
+      }
+      if (err.status === 429) break; // free-tier quotas are per model → try the next one
+      const transient = err.status === 503 || err.status === 500 || err.status === 504;
+      if (!transient) throw err; // bad key, bad request… → surface immediately
+      if (err.status === 504) break; // timed out: go straight to the next model
+      if (attempt === 0) await sleep(2000, signal);
+    }
+  }
+  throw lastErr ?? new Error('Gemini no está disponible.');
+}
+
