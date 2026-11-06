@@ -238,3 +238,28 @@ async function loadFromGitHub(
   };
 }
 
+// --------------------------------------------------------
+// Desktop (Electron) — native clone & local folders
+// --------------------------------------------------------
+async function loadFromDisk(
+  dir: string,
+  meta: Omit<RepoInfo, 'truncated' | 'skippedFiles' | 'loadedAt' | 'localDir'>,
+  onProgress: (p: LoadProgress) => void,
+): Promise<LoadedRepo> {
+  onProgress({ phase: 'scan', message: 'Escaneando archivos en disco…' });
+  const { entries, truncated } = await desktop!.scanFolder(dir);
+  const relevant = entries.filter((e) => isRelevantFile(e.path, e.size));
+  if (relevant.length === 0) throw new Error('La carpeta no contiene archivos de código reconocibles.');
+  relevant.sort((a, b) => b.size - a.size);
+  const kept = relevant.slice(0, MAX_FILES);
+
+  onProgress({ phase: 'analyze', message: 'Calculando métricas y dependencias…' });
+  const files = kept.map((e) => ({ ...analyzeSource(e.path, e.size, e.content), absPath: e.absPath }));
+  const edges = buildDependencyGraph(files);
+  return {
+    info: { ...meta, localDir: dir, truncated, skippedFiles: relevant.length - kept.length, loadedAt: Date.now() },
+    files,
+    edges,
+  };
+}
+
