@@ -162,3 +162,79 @@ async function runPool<T>(items: T[], concurrency: number, worker: (item: T, idx
   await Promise.all(runners);
 }
 
+async function loadFromGitHub(
+  parsed: ParsedRepoInput,
+  opts: { token?: string; signal?: AbortSignal; onProgress: (p: LoadProgress) => void },
+): Promise<LoadedRepo> {
+  const { owner, repo } = parsed as { owner: string; repo: string };
+  const { token, signal, onProgress } = opts;
+
+  onProgress({ phase: 'resolve', message: `Resolviendo ${owner}/${repo} en GitHub…` });
+  const meta = await gh<{ default_branch: string; description: string | null; stargazers_count: number; full_name: string; html_url: string }>(
+    `/repos/${owner}/${repo}`, token, signal,
+  );
+  const branch = parsed.branch || meta.default_branch;
+
+  onProgress({ phase: 'tree', message: `Leyendo árbol de archivos (${branch})…` });
+  const tree = await gh<{ sha: string; truncated: boolean; tree: Array<{ path: string; type: string; size?: number }> }>(
+    `/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`, token, signal,
+  );
+
+  let blobs = tree.tree.filter((t) => t.type === 'blob' && isRelevantFile(t.path, t.size || 0));
+  if (parsed.subPath) {
+    const prefix = parsed.subPath.replace(/\/$/, '') + '/';
+    blobs = blobs.filter((b) => b.path.startsWith(prefix));
+  }
+  if (blobs.length === 0) throw new Error('El repositorio no contiene archivos de código reconocibles.');
+
+  // Largest files first: they shape the skyline. Cap to keep the scene fluid.
+  blobs.sort((a, b) => (b.size || 0) - (a.size || 0));
+  const skipped = Math.max(0, blobs.length - MAX_FILES);
+  blobs = blobs.slice(0, MAX_FILES);
+
+  const downloadable = blobs.filter((b) => (b.size || 0) <= MAX_CONTENT_SIZE).slice(0, MAX_CONTENT_DOWNLOADS);
+  const contents = new Map<string, string>();
+  let done = 0;
+  onProgress({ phase: 'download', message: 'Descargando código fuente real…', done: 0, total: downloadable.length });
+
+  await runPool(downloadable, 16, async (b) => {
+    const url = `https://raw.githubusercontent.com/${owner}/${repo}/${tree.sha}/${b.path.split('/').map(encodeURIComponent).join('/')}`;
+    try {
+      const res = await fetch(url, { signal });
+      if (res.ok) {
+        const text = await res.text();
+        if (!text.includes('\u0000')) contents.set(b.path, text);
+      }
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') throw e;
+    }
+    done++;
+    if (done % 8 === 0 || done === downloadable.length) {
+      onProgress({ phase: 'download', message: 'Descargando código fuente real…', done, total: downloadable.length });
+    }
+  }, signal);
+
+  onProgress({ phase: 'analyze', message: 'Calculando métricas y dependencias…' });
+  const files = blobs.map((b) => analyzeSource(b.path, b.size || 0, contents.get(b.path)));
+  const edges = buildDependencyGraph(files);
+
+  return {
+    info: {
+      source: 'github',
+      slug: `${owner}/${repo}`,
+      displayName: meta.full_name || `${owner}/${repo}`,
+      url: meta.html_url,
+      branch,
+      commit: tree.sha,
+      description: meta.description || undefined,
+      stars: meta.stargazers_count,
+      defaultBranch: meta.default_branch,
+      truncated: tree.truncated,
+      skippedFiles: skipped,
+      loadedAt: Date.now(),
+    },
+    files,
+    edges,
+  };
+}
+
