@@ -48,7 +48,13 @@ npm run dist           # instaladores para el sistema actual, en release/
 Cada instalador se compila en su propio sistema: el `.dmg` solo puede generarse en un Mac. Para obtener los tres sin tener cada sistema, usa **GitHub Actions** (`.github/workflows/build.yml`):
 
 - **Actions → Build desktop apps → Run workflow**: compila en Windows, macOS y Ubuntu y deja los instaladores como artefactos de la ejecución.
-- Subir una etiqueta (`git tag v2.0.1 && git push origin v2.0.1`) además los publica en una *Release* de GitHub.
+- Subir una etiqueta (`git tag v2.1.0 && git push origin v2.1.0`) además los publica en una *Release* de GitHub.
+
+Sin GitHub Actions, desde un PC con Windows:
+
+- **Windows**: `./build-desktop.ps1` → `release/…-win-x64.zip`.
+- **Linux**: `./build-linux-wsl.ps1` compila dentro de Ubuntu en WSL (`wsl --install -d Ubuntu` y Node.js 22 en Ubuntu) → `.AppImage`, `.deb` y `.tar.gz`. En un Linux nativo: `bash scripts/build-linux.sh`.
+- **macOS**: solo en un Mac (`npm ci && npm run dist:mac`) o con GitHub Actions.
 
 Notas por sistema:
 
@@ -73,9 +79,17 @@ Límites: se muestran los 1.500 archivos más grandes; en web se descarga el con
 
 La clave se guarda solo en el equipo (localStorage) y se envía únicamente a la API del proveedor.
 
-## Cuentas (opcional)
+## Cuentas y nube
 
-Sin configuración, las cuentas se guardan localmente. Con Supabase (Ajustes → Cuenta y nube) se usan cuentas reales y cada auditoría se registra en `code_audits`; el esquema SQL se copia desde ese mismo panel.
+La app incluye su propia base de datos en **Supabase**, así que no hay que configurar nada: pulsa **Iniciar sesión → Crear cuenta**, confirma el correo con el enlace que te llega y entra. Con la sesión iniciada se guardan en tu cuenta, y los ves desde cualquier equipo:
+
+- **Ajustes**: tema, idioma y calidad gráfica.
+- **Repos recientes**: los repositorios que abres en la pantalla de inicio.
+- **Historial de auditorías**: cada auditoría con puntuación, hallazgos, modelo y resumen (menú de usuario → *Historial de auditorías*).
+
+Las claves de IA y el token de GitHub **nunca** se suben: se quedan en el equipo. Cada usuario solo puede leer y modificar sus propios datos (Row Level Security). El esquema está en `supabase/migrations/`.
+
+¿Prefieres tu propio proyecto Supabase? Ejecuta ese esquema en su *SQL Editor* y pega la URL y la clave *publishable* en **Ajustes → Cuenta y nube** (vacía los campos para volver a la nube integrada). Sin conexión a internet, la app sigue funcionando con cuentas locales.
 
 ## Estructura
 
