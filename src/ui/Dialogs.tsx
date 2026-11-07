@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { AlertTriangle, Check, Copy, FileText, Loader2, LogIn, UserPlus, Settings } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertTriangle, Check, Copy, FileText, History, Loader2, LogIn, MapPin, Trash2, UserPlus, Settings } from 'lucide-react';
 import type { Dict } from '../lib/i18n';
 import { Modal, ModalHeader } from './Chrome';
-import { isSupabaseConfigured, loginUser, registerUser } from '../supabaseClient';
-import type { UserProfile } from '../supabaseClient';
+import { deleteAuditRecord, fetchAuditHistory, isSupabaseConfigured, loginUser, registerUser } from '../supabaseClient';
+import type { AuditRecord, UserProfile } from '../supabaseClient';
 
 // ---------------------------------------------------------------
 // Auth
@@ -156,6 +156,80 @@ export function ReportModal({
           </div>
         )}
         {!state.loading && state.markdown && <Markdown text={state.markdown} />}
+      </div>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------
+// Audit history (Supabase)
+// ---------------------------------------------------------------
+function scoreTone(score: number | null) {
+  if (score === null) return 'text-slate-400';
+  if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
+  if (score >= 50) return 'text-amber-600 dark:text-amber-400';
+  return 'text-red-600 dark:text-red-400';
+}
+
+export function HistoryModal({
+  t, lang, currentRepo, onClose, onOpen, canOpen,
+}: {
+  t: Dict;
+  lang: 'es' | 'en';
+  currentRepo: string | null;
+  onClose: () => void;
+  onOpen: (path: string) => void;
+  canOpen: (repoName: string | null, path: string) => boolean;
+}) {
+  const [items, setItems] = useState<AuditRecord[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchAuditHistory().then(setItems).catch((e: Error) => setError(e.message));
+  }, []);
+
+  const remove = async (id: string) => {
+    try {
+      await deleteAuditRecord(id);
+      setItems((l) => (l ? l.filter((x) => x.id !== id) : l));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const fmt = new Intl.DateTimeFormat(lang === 'es' ? 'es-ES' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' });
+
+  return (
+    <Modal onClose={onClose} width="w-[720px] h-[min(720px,90vh)]">
+      <ModalHeader icon={<History className="h-5 w-5" />} title={t.history} subtitle={t.historyHint} onClose={onClose} />
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        {error && <div className="mb-3 flex gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-300"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{error}</div>}
+        {!items && !error && (
+          <div className="flex h-full items-center justify-center gap-2 text-[13px] text-slate-500"><Loader2 className="h-5 w-5 animate-spin text-cyan-500" />{t.loadingHistory}</div>
+        )}
+        {items && items.length === 0 && <div className="flex h-full items-center justify-center text-[13px] text-slate-500">{t.emptyHistory}</div>}
+        {items && items.length > 0 && (
+          <ul className="space-y-2">
+            {items.map((a) => (
+              <li key={a.id} className={`panel flex items-start gap-3 rounded-xl px-3 py-2.5 ${a.repoName && a.repoName === currentRepo ? 'ring-1 ring-cyan-500/30' : ''}`}>
+                <div className={`w-11 shrink-0 text-center font-mono text-[18px] font-bold ${scoreTone(a.score)}`}>{a.score ?? '–'}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-mono text-[12.5px] text-slate-800 dark:text-slate-100" title={a.filePath}>{a.filePath}</div>
+                  <div className="mt-0.5 text-[11px] text-slate-500">
+                    {[a.repoName, fmt.format(new Date(a.createdAt)), a.modelName || a.provider, `${a.issuesCount} ${t.issuesShort}${a.criticalCount ? ` · ${a.criticalCount} CRITICAL` : ''}${a.highCount ? ` · ${a.highCount} HIGH` : ''}`].filter(Boolean).join(' · ')}
+                  </div>
+                  {a.summary && <div className="mt-1 line-clamp-2 text-[12px] text-slate-600 dark:text-slate-400">{a.summary}</div>}
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  {canOpen(a.repoName, a.filePath) && (
+                    <button className="btn-icon btn" title={t.openInCity} onClick={() => onOpen(a.filePath)}><MapPin className="h-4 w-4" /></button>
+                  )}
+                  <button className="btn-icon btn hover:text-red-500" title={t.deleteEntry} onClick={() => remove(a.id)}><Trash2 className="h-4 w-4" /></button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </Modal>
   );

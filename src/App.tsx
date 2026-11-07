@@ -8,7 +8,7 @@ import { Dock, LoadingOverlay, SearchPalette, TopBar } from './ui/Chrome';
 import { EmptyInspector, Inspector, Sidebar } from './ui/Panels';
 import { AuditModal } from './ui/AuditModal';
 import { GITHUB_TOKEN_KEY, SettingsModal } from './ui/SettingsModal';
-import { AuthModal, ReportModal } from './ui/Dialogs';
+import { AuthModal, HistoryModal, ReportModal } from './ui/Dialogs';
 import { DICTS } from './lib/i18n';
 import { buildCity, DISTRICTS } from './lib/cityLayout';
 import type { DistrictKey } from './lib/cityLayout';
@@ -52,6 +52,7 @@ export default function App() {
 
   const [showSettings, setShowSettings] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [recentsVersion, setRecentsVersion] = useState(0);
   const [cloudReady, setCloudReady] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -310,6 +311,7 @@ export default function App() {
       onReport={runReport}
       onSettings={() => setShowSettings(true)}
       onAuth={() => setShowAuth(true)}
+      onHistory={() => setShowHistory(true)}
       onLogout={async () => { await logoutUser(); setUser(null); }}
       onToggleTheme={() => setTheme(dark ? 'light' : 'dark')}
       onToggleLang={() => setLang(lang === 'es' ? 'en' : 'es')}
@@ -412,6 +414,16 @@ export default function App() {
       {loading && <LoadingOverlay t={t} progress={loading.progress} target={loading.target} onCancel={() => { abortRef.current?.abort(); setLoading(null); }} />}
       {showSearch && city && <SearchPalette t={t} city={city} onClose={() => setShowSearch(false)} onPick={(p) => { setShowSearch(false); pick(p, true); }} />}
       {showSettings && <SettingsModal t={t} config={aiConfig} onClose={() => setShowSettings(false)} onSave={(c) => { setAiConfig(c); saveStoredAIConfig(c); }} />}
+      {showHistory && user && !user.isLocalGuest && (
+        <HistoryModal
+          t={t}
+          lang={lang}
+          currentRepo={repo?.info.displayName ?? null}
+          onClose={() => setShowHistory(false)}
+          onOpen={(path) => { if (fileByPath.has(path)) { setShowHistory(false); pick(path, true); } }}
+          canOpen={(repoName, path) => Boolean(repo && repoName === repo.info.displayName && fileByPath.has(path))}
+        />
+      )}
       {showAuth && <AuthModal t={t} onClose={() => setShowAuth(false)} onAuthed={(u) => { setUser(u); setShowAuth(false); }} />}
       {report && repo && (
         <ReportModal t={t} repoName={repo.info.displayName} state={report} onClose={() => setReport(null)} onSettings={() => { setReport(null); setShowSettings(true); }} onRetry={runReport} />

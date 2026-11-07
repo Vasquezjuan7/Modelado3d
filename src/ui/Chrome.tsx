@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowLeft, Box, Camera, Check, ChevronDown, Cpu, ExternalLink, FileText, Languages, Loader2, LogIn, LogOut, Moon,
+  ArrowLeft, Box, Camera, History, Check, ChevronDown, Cpu, ExternalLink, FileText, Languages, Loader2, LogIn, LogOut, Moon,
   RotateCw, Search, Settings, Sparkles, Star, Sun, Tag, Waypoints, X, Gauge, GitBranch, Command,
 } from 'lucide-react';
 import type { Dict } from '../lib/i18n';
@@ -61,7 +61,7 @@ export function LoadingOverlay({ t, progress, target, onCancel }: { t: Dict; pro
 // Top bar
 // ---------------------------------------------------------------
 export function TopBar({
-  t, info, aiConfig, user, dark, lang, onBack, onSearch, onReport, onSettings, onAuth, onLogout, onToggleTheme, onToggleLang,
+  t, info, aiConfig, user, dark, lang, onBack, onSearch, onReport, onSettings, onAuth, onHistory, onLogout, onToggleTheme, onToggleLang,
 }: {
   t: Dict;
   info: RepoInfo | null;
@@ -74,6 +74,7 @@ export function TopBar({
   onReport?: () => void;
   onSettings: () => void;
   onAuth: () => void;
+  onHistory?: () => void;
   onLogout: () => void;
   onToggleTheme: () => void;
   onToggleLang: () => void;
@@ -146,6 +147,9 @@ export function TopBar({
                 <div className="text-[11.5px] text-slate-500">{user.email}</div>
                 <div className="mt-1.5 text-[11px] text-slate-500">{user.role} · {user.isLocalGuest ? t.localAccount : t.cloudAccount}</div>
               </div>
+              {!user.isLocalGuest && onHistory && (
+                <button onClick={() => { setMenu(false); onHistory(); }} className="btn mt-1 w-full justify-start"><History className="h-4 w-4" />{t.history}</button>
+              )}
               <button onClick={() => { setMenu(false); onLogout(); }} className="btn mt-1 w-full justify-start text-red-500 hover:bg-red-500/10"><LogOut className="h-4 w-4" />{t.logout}</button>
             </div>
           )}

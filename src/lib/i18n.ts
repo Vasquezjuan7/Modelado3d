@@ -131,6 +131,11 @@ const es = {
   truncatedWarn: 'Repositorio grande: se muestran los {n} archivos principales.',
   history: 'Historial de auditorías',
   emptyHistory: 'Aún no hay auditorías.',
+  historyHint: 'Las auditorías se guardan en tu cuenta y las ves desde cualquier equipo.',
+  openInCity: 'Ver en la ciudad',
+  deleteEntry: 'Eliminar',
+  issuesShort: 'hallazgos',
+  loadingHistory: 'Cargando historial…',
 };
 
 export type Dict = typeof es;
@@ -268,6 +273,11 @@ const en: Dict = {
   truncatedWarn: 'Large repository: showing the top {n} files.',
   history: 'Audit history',
   emptyHistory: 'No audits yet.',
+  historyHint: 'Audits are saved to your account and available on any device.',
+  openInCity: 'Show in city',
+  deleteEntry: 'Delete',
+  issuesShort: 'findings',
+  loadingHistory: 'Loading history…',
 };
 
 export const DICTS = { es, en };
