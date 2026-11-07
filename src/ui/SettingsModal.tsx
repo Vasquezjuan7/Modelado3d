@@ -4,7 +4,14 @@ import type { Dict } from '../lib/i18n';
 import type { AIConfig, AIProvider, GeminiModelInfo } from '../lib/aiEngine';
 import { DEFAULT_GEMINI_MODEL, listGeminiModels, testGeminiKey, testOpenAIKey } from '../lib/aiEngine';
 import { Modal, ModalHeader } from './Chrome';
-import { getSupabaseConfig, initSupabaseClient, isSupabaseConfigured, SUPABASE_SCHEMA_SQL } from '../supabaseClient';
+import { getBuiltinSupabaseConfig, getSupabaseConfig, initSupabaseClient, isSupabaseConfigured, SUPABASE_SCHEMA_SQL } from '../supabaseClient';
+
+// Los campos se muestran vacíos cuando se usa la nube integrada
+function customSupabaseConfig() {
+  const cur = getSupabaseConfig();
+  const builtin = getBuiltinSupabaseConfig();
+  return cur.url === builtin.url && cur.anonKey === builtin.anonKey ? { url: '', anonKey: '' } : cur;
+}
 
 export const GITHUB_TOKEN_KEY = 'codecity_github_token';
 
@@ -26,8 +33,8 @@ export function SettingsModal({ t, config, onSave, onClose }: { t: Dict; config:
   const [models, setModels] = useState<GeminiModelInfo[]>([]);
   const [test, setTest] = useState<{ state: 'idle' | 'busy' | 'ok' | 'err'; msg?: string }>({ state: 'idle' });
   const [ghToken, setGhToken] = useState(localStorage.getItem(GITHUB_TOKEN_KEY) || '');
-  const [supaUrl, setSupaUrl] = useState(getSupabaseConfig().url);
-  const [supaKey, setSupaKey] = useState(getSupabaseConfig().anonKey);
+  const [supaUrl, setSupaUrl] = useState(customSupabaseConfig().url);
+  const [supaKey, setSupaKey] = useState(customSupabaseConfig().anonKey);
   const [sqlCopied, setSqlCopied] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -61,7 +68,7 @@ export function SettingsModal({ t, config, onSave, onClose }: { t: Dict; config:
     onSave(draft);
     if (ghToken.trim()) localStorage.setItem(GITHUB_TOKEN_KEY, ghToken.trim());
     else localStorage.removeItem(GITHUB_TOKEN_KEY);
-    if (supaUrl.trim() !== getSupabaseConfig().url || supaKey.trim() !== getSupabaseConfig().anonKey) {
+    if (supaUrl.trim() !== customSupabaseConfig().url || supaKey.trim() !== customSupabaseConfig().anonKey) {
       initSupabaseClient({ url: supaUrl.trim(), anonKey: supaKey.trim() });
     }
     setSaved(true);
