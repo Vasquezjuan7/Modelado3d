@@ -5,6 +5,7 @@
 // ========================================================
 import { analyzeSource, buildDependencyGraph, isRelevantFile } from './codeMetrics';
 import type { DependencyEdge, RepoFile } from './codeMetrics';
+import { deleteCloudRecent, fetchCloudRecents, upsertCloudRecents } from '../supabaseClient';
 
 export interface DesktopScanEntry {
   path: string;
@@ -342,8 +343,28 @@ export function pushRecentRepo(r: RecentRepo) {
   const list = getRecentRepos().filter((x) => x.name !== r.name);
   list.unshift(r);
   localStorage.setItem(RECENTS_KEY, JSON.stringify(list.slice(0, 6)));
+  void upsertCloudRecents([r]);
 }
 
 export function removeRecentRepo(name: string) {
   localStorage.setItem(RECENTS_KEY, JSON.stringify(getRecentRepos().filter((x) => x.name !== name)));
+  void deleteCloudRecent(name);
+}
+
+/** Une los recientes de la cuenta con los de este equipo y sube los que falten. */
+export async function syncRecentRepos(): Promise<RecentRepo[] | null> {
+  const remote = await fetchCloudRecents();
+  if (!remote) return null;
+  const local = getRecentRepos();
+  const byName = new Map<string, RecentRepo>();
+  [...remote, ...local].forEach((r) => {
+    const prev = byName.get(r.name);
+    if (!prev || r.at > prev.at) byName.set(r.name, r);
+  });
+  const merged = [...byName.values()].sort((a, b) => b.at - a.at).slice(0, 6);
+  localStorage.setItem(RECENTS_KEY, JSON.stringify(merged));
+  const remoteNames = new Map(remote.map((r) => [r.name, r.at]));
+  const missing = merged.filter((r) => (remoteNames.get(r.name) ?? -1) < r.at);
+  await upsertCloudRecents(missing);
+  return merged;
 }

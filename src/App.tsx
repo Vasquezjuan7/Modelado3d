@@ -13,7 +13,7 @@ import { DICTS } from './lib/i18n';
 import { buildCity, DISTRICTS } from './lib/cityLayout';
 import type { DistrictKey } from './lib/cityLayout';
 import { analyzeSource, buildDependencyGraph } from './lib/codeMetrics';
-import { desktop, fileWebUrl, isDesktop, loadLocalFolder, loadRepository, pushRecentRepo } from './lib/repoLoader';
+import { desktop, fileWebUrl, isDesktop, loadLocalFolder, loadRepository, pushRecentRepo, syncRecentRepos } from './lib/repoLoader';
 import type { LoadedRepo, LoadProgress } from './lib/repoLoader';
 import { analyzeCodeLocally, auditFile, getStoredAIConfig, isAIReady, repoReport, saveStoredAIConfig } from './lib/aiEngine';
 import type { AIConfig, AuditResult } from './lib/aiEngine';
@@ -52,6 +52,7 @@ export default function App() {
 
   const [showSettings, setShowSettings] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [recentsVersion, setRecentsVersion] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
   const [audit, setAudit] = useState<AuditState | null>(null);
   const [report, setReport] = useState<{ loading: boolean; markdown?: string; model?: string; error?: string } | null>(null);
@@ -70,6 +71,17 @@ export default function App() {
   useEffect(() => {
     checkInitialSession().then(setUser);
   }, []);
+
+  // ----- cloud sync (Supabase): repos recientes -----
+  const cloudUserId = user && !user.isLocalGuest ? user.id : null;
+  useEffect(() => {
+    if (!cloudUserId) return;
+    let cancelled = false;
+    syncRecentRepos().then((merged) => {
+      if (!cancelled && merged) setRecentsVersion((v) => v + 1);
+    });
+    return () => { cancelled = true; };
+  }, [cloudUserId]);
 
   // ----- derived city data -----
   const city = useMemo(() => (repo ? buildCity(repo.files) : null), [repo]);
@@ -291,7 +303,7 @@ export default function App() {
     <div className="relative h-full w-full overflow-hidden bg-[#e9eef5] text-slate-900 dark:bg-ink-950 dark:text-slate-100">
       {!repo || !city ? (
         <>
-          <Landing t={t} lang={lang} dark={dark} error={loadError} onSubmit={startLoad} onOpenFolder={openFolder} onDismissError={() => setLoadError(null)} />
+          <Landing t={t} lang={lang} dark={dark} error={loadError} recentsVersion={recentsVersion} onSubmit={startLoad} onOpenFolder={openFolder} onDismissError={() => setLoadError(null)} />
           {topBar}
         </>
       ) : (

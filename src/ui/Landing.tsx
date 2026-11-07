@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Boxes, Clock, FolderOpen, GitBranch, Monitor, Network, ShieldCheck, Sparkles, X, AlertTriangle, Globe } from 'lucide-react';
 import CityScene from '../scene/CityScene';
 import { buildCity } from '../lib/cityLayout';
@@ -25,9 +25,10 @@ function useBackdropCity() {
 }
 
 export function Landing({
-  t, lang, dark, error, onSubmit, onOpenFolder, onDismissError,
+  t, lang, dark, error, onSubmit, onOpenFolder, onDismissError, recentsVersion = 0,
 }: {
   t: Dict;
+  recentsVersion?: number;
   lang: 'es' | 'en';
   dark: boolean;
   error: string | null;
@@ -37,6 +38,7 @@ export function Landing({
 }) {
   const [value, setValue] = useState('');
   const [recents, setRecents] = useState(getRecentRepos());
+  useEffect(() => setRecents(getRecentRepos()), [recentsVersion]);
   const city = useBackdropCity();
   const empty = useMemo(() => new Map<string, number>(), []);
   const emptyS = useMemo(() => new Map<string, string>(), []);
