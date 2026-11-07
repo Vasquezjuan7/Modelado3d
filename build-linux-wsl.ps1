@@ -5,7 +5,7 @@
 # Genera .AppImage, .deb y .tar.gz en la carpeta release a partir del último commit.
 
 $distro = if ($env:CODECITY_WSL_DISTRO) { $env:CODECITY_WSL_DISTRO } else { "Ubuntu" }
-$wslPath = (wsl -d $distro -- wslpath -a ($PSScriptRoot -replace '\', '/')).Trim()
+$wslPath = (wsl -d $distro -- wslpath -a ($PSScriptRoot.Replace([char]92, [char]47))).Trim()
 if ($LASTEXITCODE -ne 0 -or -not $wslPath) {
     Write-Host "No se pudo acceder a WSL ($distro). Instala Ubuntu con: wsl --install -d Ubuntu" -ForegroundColor Red
     exit 1
