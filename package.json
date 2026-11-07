@@ -2,7 +2,7 @@
   "name": "codecity-nexus-3d",
   "productName": "CodeCity Nexus 3D",
   "description": "Convierte cualquier repositorio en una ciudad 3D navegable y audítalo con IA",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
