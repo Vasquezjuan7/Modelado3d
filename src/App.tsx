@@ -205,12 +205,24 @@ export default function App() {
       const result = await auditFile(file.content, file.name, file.path, cfg, { lang, context, signal: ctrl.signal });
       if (ctrl.signal.aborted) return;
       setAudit({ path, loading: false, result, error: null, forceLocal });
-      saveAuditRecord(user, { fileName: file.path, language: file.language, issuesCount: result.issues.length, score: result.score });
+      void saveAuditRecord({
+        repoName: repo?.info.displayName,
+        filePath: file.path,
+        language: file.language,
+        provider: result.provider,
+        modelName: result.modelName,
+        severity: result.severity,
+        score: result.score,
+        issuesCount: result.issues.length,
+        criticalCount: result.issues.filter((i) => i.severity === 'CRITICAL').length,
+        highCount: result.issues.filter((i) => i.severity === 'HIGH').length,
+        summary: result.summary,
+      });
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;
       setAudit({ path, loading: false, result: null, error: (e as Error).message, forceLocal });
     }
-  }, [fileByPath, aiConfig, repo, depsOf, lang, user]);
+  }, [fileByPath, aiConfig, repo, depsOf, lang]);
 
   const applyRefactor = async (path: string, code: string) => {
     const file = fileByPath.get(path);
