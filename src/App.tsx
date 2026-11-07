@@ -17,7 +17,7 @@ import { desktop, fileWebUrl, isDesktop, loadLocalFolder, loadRepository, pushRe
 import type { LoadedRepo, LoadProgress } from './lib/repoLoader';
 import { analyzeCodeLocally, auditFile, getStoredAIConfig, isAIReady, repoReport, saveStoredAIConfig } from './lib/aiEngine';
 import type { AIConfig, AuditResult } from './lib/aiEngine';
-import { checkInitialSession, logoutUser, saveAuditRecord } from './supabaseClient';
+import { checkInitialSession, fetchCloudSettings, logoutUser, onCloudAuthChange, saveAuditRecord, saveCloudSettings } from './supabaseClient';
 import type { UserProfile } from './supabaseClient';
 
 type AuditState = { path: string; loading: boolean; result: AuditResult | null; error: string | null; forceLocal: boolean };
@@ -53,6 +53,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [recentsVersion, setRecentsVersion] = useState(0);
+  const [cloudReady, setCloudReady] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [audit, setAudit] = useState<AuditState | null>(null);
   const [report, setReport] = useState<{ loading: boolean; markdown?: string; model?: string; error?: string } | null>(null);
@@ -70,18 +71,34 @@ export default function App() {
   useEffect(() => localStorage.setItem('codecity_quality', quality), [quality]);
   useEffect(() => {
     checkInitialSession().then(setUser);
+    return onCloudAuthChange((u) => setUser((prev) => (u ? (prev?.id === u.id ? prev : u) : prev && !prev.isLocalGuest ? null : prev)));
   }, []);
 
-  // ----- cloud sync (Supabase): repos recientes -----
+  // ----- cloud sync (Supabase): ajustes + repos recientes -----
   const cloudUserId = user && !user.isLocalGuest ? user.id : null;
   useEffect(() => {
+    setCloudReady(false);
     if (!cloudUserId) return;
     let cancelled = false;
-    syncRecentRepos().then((merged) => {
+    (async () => {
+      const remote = await fetchCloudSettings();
+      if (cancelled) return;
+      if (remote) {
+        setTheme(remote.theme);
+        setLang(remote.lang);
+        setQuality(remote.quality);
+      }
+      setCloudReady(true);
+      const merged = await syncRecentRepos();
       if (!cancelled && merged) setRecentsVersion((v) => v + 1);
-    });
+    })();
     return () => { cancelled = true; };
   }, [cloudUserId]);
+  useEffect(() => {
+    if (!cloudReady) return;
+    const id = setTimeout(() => void saveCloudSettings({ theme, lang, quality }), 600);
+    return () => clearTimeout(id);
+  }, [cloudReady, theme, lang, quality]);
 
   // ----- derived city data -----
   const city = useMemo(() => (repo ? buildCity(repo.files) : null), [repo]);
