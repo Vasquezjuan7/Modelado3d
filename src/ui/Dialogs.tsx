@@ -18,15 +18,21 @@ export function AuthModal({ t, onClose, onAuthed }: { t: Dict; onClose: () => vo
   const [role, setRole] = useState(ROLES[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    setNotice(null);
     const r = mode === 'login' ? await loginUser(email, password) : await registerUser(email, password, name, role);
     setBusy(false);
-    if (r.error || !r.user) setError(r.error || 'Error');
-    else onAuthed(r.user);
+    if (r.user) onAuthed(r.user);
+    else if (r.notice) {
+      setNotice(r.notice);
+      setMode('login');
+      setPassword('');
+    } else setError(r.error || 'Error');
   };
 
   return (
@@ -47,6 +53,7 @@ export function AuthModal({ t, onClose, onAuthed }: { t: Dict; onClose: () => vo
         )}
         <input className="input" type="email" placeholder={t.email} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
         <input className="input" type="password" placeholder={t.password} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} required minLength={6} />
+        {notice && <div className="flex gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[12px] text-emerald-700 dark:text-emerald-300"><Check className="mt-0.5 h-4 w-4 shrink-0" />{notice}</div>}
         {error && <div className="flex gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-[12px] text-red-600 dark:text-red-300"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{error}</div>}
         <button className="btn btn-primary w-full py-2.5" disabled={busy}>
           {busy && <Loader2 className="h-4 w-4 animate-spin" />}
